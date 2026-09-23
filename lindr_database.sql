@@ -197,5 +197,28 @@ INSERT INTO `token_packages` (`name`, `tokens`, `bonus_tokens`, `price_usd`, `pr
 ('VIP Pack', 7000, 1500, 49.99, 6500, 'VIP LEVEL UNLOCK', 1, NOW(), NOW()),
 ('Ultra Whale Pack', 15000, 4000, 99.99, 13000, 'MAX SAVINGS 40%', 1, NOW(), NOW());
 
+-- --------------------------------------------------------
+-- Table structure for table `migrations`
+-- --------------------------------------------------------
+DROP TABLE IF EXISTS `migrations`;
+CREATE TABLE `migrations` (
+  `id` int(10) UNSIGNED NOT NULL AUTO_INCREMENT,
+  `migration` varchar(255) NOT NULL,
+  `batch` int(11) NOT NULL,
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+INSERT INTO `migrations` (`migration`, `batch`) VALUES
+('0001_01_01_000000_create_users_table', 1),
+('0001_01_01_000001_create_cache_table', 1),
+('0001_01_01_000002_create_jobs_table', 1),
+('2026_09_23_000001_create_transactions_table', 1),
+('2026_09_23_000002_create_withdrawals_table', 1),
+('2026_09_23_000003_create_call_sessions_table', 1),
+('2026_09_23_000004_create_chat_messages_table', 1),
+('2026_09_23_000005_create_user_tasks_table', 1),
+('2026_09_23_000006_create_system_settings_table', 1),
+('2026_09_23_000007_create_token_packages_table', 1);
+
 SET FOREIGN_KEY_CHECKS=1;
 COMMIT;

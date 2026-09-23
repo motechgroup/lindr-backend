@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\File;
 
@@ -106,13 +107,37 @@ class GitController extends Controller
         // Pending Migrations Check
         $pendingMigrations = [];
         try {
+            if (!Schema::hasTable('migrations')) {
+                Artisan::call('migrate:install');
+            }
+
             $ranMigrations = DB::table('migrations')->pluck('migration')->toArray();
             $migrationFiles = File::files(database_path('migrations'));
             
             foreach ($migrationFiles as $file) {
                 $filename = str_replace('.php', '', $file->getFilename());
                 if (!in_array($filename, $ranMigrations)) {
-                    $pendingMigrations[] = $filename;
+                    // Check if corresponding table already exists in MySQL
+                    $tableName = null;
+                    if (str_contains($filename, 'create_users')) $tableName = 'users';
+                    elseif (str_contains($filename, 'create_cache')) $tableName = 'cache';
+                    elseif (str_contains($filename, 'create_jobs')) $tableName = 'jobs';
+                    elseif (str_contains($filename, 'create_transactions')) $tableName = 'transactions';
+                    elseif (str_contains($filename, 'create_withdrawals')) $tableName = 'withdrawals';
+                    elseif (str_contains($filename, 'create_call_sessions')) $tableName = 'call_sessions';
+                    elseif (str_contains($filename, 'create_chat_messages')) $tableName = 'chat_messages';
+                    elseif (str_contains($filename, 'create_user_tasks')) $tableName = 'user_tasks';
+                    elseif (str_contains($filename, 'create_system_settings')) $tableName = 'system_settings';
+                    elseif (str_contains($filename, 'create_token_packages')) $tableName = 'token_packages';
+
+                    if ($tableName && Schema::hasTable($tableName)) {
+                        DB::table('migrations')->insertOrIgnore([
+                            'migration' => $filename,
+                            'batch' => 1
+                        ]);
+                    } else {
+                        $pendingMigrations[] = $filename;
+                    }
                 }
             }
         } catch (\Throwable $e) {

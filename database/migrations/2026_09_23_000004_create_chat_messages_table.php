@@ -8,15 +8,17 @@ return new class extends Migration
 {
     public function up(): void
     {
-        Schema::create('chat_messages', function (Blueprint $table) {
-            $table->id();
-            $table->foreignId('sender_id')->constrained('users')->onDelete('cascade');
-            $table->foreignId('receiver_id')->constrained('users')->onDelete('cascade');
-            $table->text('message_text')->nullable();
-            $table->string('gift_id')->nullable();
-            $table->integer('tokens_spent')->default(0);
-            $table->timestamps();
-        });
+        if (!Schema::hasTable('chat_messages')) {
+            Schema::create('chat_messages', function (Blueprint $table) {
+                $table->id();
+                $table->foreignId('sender_id')->constrained('users')->onDelete('cascade');
+                $table->foreignId('receiver_id')->constrained('users')->onDelete('cascade');
+                $table->text('message_text')->nullable();
+                $table->string('gift_id')->nullable();
+                $table->integer('tokens_spent')->default(0);
+                $table->timestamps();
+            });
+        }
     }
 
     public function down(): void
