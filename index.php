@@ -6,7 +6,9 @@
  * on any cPanel / DirectAdmin shared host without directory index listings.
  */
 
-define('LARAVEL_START', microtime(true));
+if (!defined('LARAVEL_START')) {
+    define('LARAVEL_START', microtime(true));
+}
 
 // Check if request is for setup.php directly
 $uri = urldecode(parse_url($_SERVER['REQUEST_URI'] ?? '/', PHP_URL_PATH) ?? '/');
