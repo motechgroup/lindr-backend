@@ -13,13 +13,40 @@ class GitController extends Controller
     private function runCmd($cmd)
     {
         $output = [];
-        $returnVar = 0;
+        $returnVar = 1;
         $workDir = base_path();
-        
-        // Execute shell command cleanly capturing both stdout and stderr
-        $fullCmd = "cd " . escapeshellarg($workDir) . " && " . $cmd . " 2>&1";
-        @exec($fullCmd, $output, $returnVar);
-        
+
+        $disabled = array_map('trim', explode(',', ini_get('disable_functions') ?: ''));
+
+        if (!function_exists('exec') || in_array('exec', $disabled)) {
+            if (function_exists('shell_exec') && !in_array('shell_exec', $disabled)) {
+                $fullCmd = "cd " . \escapeshellarg($workDir) . " && " . $cmd . " 2>&1";
+                $res = @\shell_exec($fullCmd);
+                return [
+                    'success' => !empty($res),
+                    'output' => $res ?: 'Command completed with empty output.',
+                    'code' => 0,
+                ];
+            }
+
+            return [
+                'success' => false,
+                'output' => 'Shell command execution (exec / shell_exec) is restricted on this shared host.',
+                'code' => 1,
+            ];
+        }
+
+        $fullCmd = "cd " . \escapeshellarg($workDir) . " && " . $cmd . " 2>&1";
+        try {
+            @\exec($fullCmd, $output, $returnVar);
+        } catch (\Throwable $e) {
+            return [
+                'success' => false,
+                'output' => 'Execution error: ' . $e->getMessage(),
+                'code' => 1,
+            ];
+        }
+
         return [
             'success' => $returnVar === 0,
             'output' => implode("\n", $output),
@@ -107,7 +134,7 @@ class GitController extends Controller
         $branchRes = $this->runCmd('git rev-parse --abbrev-ref HEAD');
         $branch = $branchRes['success'] ? trim($branchRes['output']) : 'main';
 
-        $res = $this->runCmd("git pull origin " . escapeshellarg($branch));
+        $res = $this->runCmd("git pull origin " . \escapeshellarg($branch));
 
         if ($res['success']) {
             return back()->with('success', '⚡ Git Pull Successful! New code updated from GitHub repository. Log: ' . $res['output']);
@@ -146,7 +173,7 @@ class GitController extends Controller
         // 1. Git Pull
         $branchRes = $this->runCmd('git rev-parse --abbrev-ref HEAD');
         $branch = $branchRes['success'] ? trim($branchRes['output']) : 'main';
-        $pullRes = $this->runCmd("git pull origin " . escapeshellarg($branch));
+        $pullRes = $this->runCmd("git pull origin " . \escapeshellarg($branch));
         $log[] = "--- GIT PULL ---";
         $log[] = $pullRes['output'];
 
