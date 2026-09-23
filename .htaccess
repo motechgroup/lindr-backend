@@ -1,12 +1,16 @@
 <IfModule mod_rewrite.c>
     RewriteEngine On
-    
-    # Handle shared hosting root redirect to public folder
+    Options -Indexes
+
+    # Route request to public/ folder if file exists
     RewriteCond %{REQUEST_URI} !^/public/
+    RewriteCond %{DOCUMENT_ROOT}/public%{REQUEST_URI} -f
+    RewriteRule ^(.+)$ public/$1 [L]
+
+    # Route all other requests through index.php
     RewriteCond %{REQUEST_FILENAME} !-f
     RewriteCond %{REQUEST_FILENAME} !-d
-    RewriteRule ^(.*)$ public/$1 [L]
-
-    # Handle direct root request / -> public/
-    RewriteRule ^$ public/ [L]
+    RewriteRule ^ index.php [L]
 </IfModule>
+
+DirectoryIndex index.php
