@@ -27,11 +27,16 @@ class AuthController extends Controller
             ->first();
 
         if (!$user) {
+            $countryCode = $request->input('countryCode', 'KE');
+            $countryName = $request->input('countryName', $countryCode === 'KE' ? 'Kenya' : 'International');
+
             $user = User::create([
                 'name' => $validated['name'] ?? 'Google User',
                 'email' => $validated['email'],
                 'google_id' => $validated['googleId'] ?? 'g_' . Str::random(10),
                 'avatar' => $validated['avatar'] ?? 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=600&q=80',
+                'country_code' => $countryCode,
+                'country_name' => $countryName,
                 'tokens' => 350,
                 'credits' => 0,
                 'gender' => 'male',
@@ -41,6 +46,10 @@ class AuthController extends Controller
             if (!empty($validated['avatar'])) $user->avatar = $validated['avatar'];
             if (!empty($validated['name'])) $user->name = $validated['name'];
             if (!empty($validated['googleId'])) $user->google_id = $validated['googleId'];
+            if ($request->has('countryCode')) {
+                $user->country_code = $request->input('countryCode');
+                $user->country_name = $request->input('countryName', $user->country_code === 'KE' ? 'Kenya' : 'International');
+            }
             $user->save();
         }
 
@@ -54,6 +63,8 @@ class AuthController extends Controller
                 'gender' => $user->gender,
                 'birthdate' => $user->birthdate,
                 'avatar' => $user->avatar,
+                'countryCode' => $user->country_code ?? 'KE',
+                'countryName' => $user->country_name ?? 'Kenya',
                 'isVerified' => $user->is_verified,
                 'tokens' => $user->tokens,
                 'credits' => $user->credits,
@@ -72,12 +83,19 @@ class AuthController extends Controller
         $validated = $request->validate([
             'email' => 'required|email',
             'password' => 'nullable|string',
+            'countryCode' => 'nullable|string',
+            'countryName' => 'nullable|string',
         ]);
+
+        $countryCode = $request->input('countryCode', 'KE');
+        $countryName = $request->input('countryName', $countryCode === 'KE' ? 'Kenya' : 'International');
 
         $user = User::firstOrCreate(
             ['email' => $validated['email']],
             [
                 'name' => explode('@', $validated['email'])[0],
+                'country_code' => $countryCode,
+                'country_name' => $countryName,
                 'tokens' => 350,
                 'credits' => 0,
                 'gender' => 'male',
@@ -95,6 +113,8 @@ class AuthController extends Controller
                 'gender' => $user->gender,
                 'birthdate' => $user->birthdate,
                 'avatar' => $user->avatar,
+                'countryCode' => $user->country_code ?? 'KE',
+                'countryName' => $user->country_name ?? 'Kenya',
                 'isVerified' => $user->is_verified,
                 'tokens' => $user->tokens,
                 'credits' => $user->credits,

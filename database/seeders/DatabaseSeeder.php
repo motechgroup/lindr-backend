@@ -162,6 +162,11 @@ class DatabaseSeeder extends Seeder
             ['key' => 'mpesa_passkey', 'value' => env('MPESA_PASSKEY', 'your_mpesa_passkey'), 'category' => 'gateways', 'description' => 'M-Pesa Online Passkey'],
             ['key' => 'mpesa_callback_url', 'value' => env('MPESA_CALLBACK_URL', 'https://lindrapp.top/api/v1/webhooks/mpesa'), 'category' => 'gateways', 'description' => 'M-Pesa Instant Callback URL'],
 
+            // ePay Payout Gateway Credentials
+            ['key' => 'epay_merchant_id', 'value' => env('EPAY_MERCHANT_ID', 'EPAY_MCH_884920'), 'category' => 'gateways', 'description' => 'ePay Merchant Account ID'],
+            ['key' => 'epay_api_key', 'value' => env('EPAY_API_KEY', 'epay_secret_api_key_sandbox'), 'category' => 'gateways', 'description' => 'ePay Secret API Key'],
+            ['key' => 'epay_environment', 'value' => env('EPAY_ENVIRONMENT', 'sandbox'), 'category' => 'gateways', 'description' => 'ePay Environment (sandbox/production)'],
+
             // Google OAuth Credentials
             ['key' => 'google_web_client_id', 'value' => 'your-google-web-client-id.apps.googleusercontent.com', 'category' => 'google', 'description' => 'Google Web OAuth Client ID'],
             ['key' => 'google_ios_client_id', 'value' => 'your-google-ios-client-id.apps.googleusercontent.com', 'category' => 'google', 'description' => 'Google iOS Client ID'],

@@ -35,12 +35,31 @@
                     <tr class="hover:bg-white/[0.02] transition">
                         <td class="p-4 font-bold text-white flex items-center gap-3">
                             <img src="{{ $w->user->avatar ?? '' }}" class="w-8 h-8 rounded-full object-cover">
-                            {{ $w->user->name ?? 'User' }}
+                            <div>
+                                <div>{{ $w->user->name ?? 'User' }}</div>
+                                <div class="text-[10px] text-gray-400 font-medium">
+                                    @if(($w->user->country_code ?? 'KE') === 'KE')
+                                        <span class="text-green-400 font-bold">🇰🇪 Kenya</span>
+                                    @else
+                                        <span class="text-blue-400 font-bold">🌐 {{ $w->user->country_name ?? 'International' }}</span>
+                                    @endif
+                                </div>
+                            </div>
                         </td>
                         <td class="p-4 font-semibold text-yellow-400">{{ number_format($w->credits_amount) }} Credits</td>
                         <td class="p-4 font-bold text-emerald-400">${{ number_format($w->amount_usd, 2) }}</td>
-                        <td class="p-4 uppercase font-semibold text-gray-300">{{ $w->payment_method }}</td>
-                        <td class="p-4 font-mono text-xs text-gray-400">{{ $w->account_details }}</td>
+                        <td class="p-4">
+                            @if(strtolower($w->payment_method) === 'mpesa')
+                                <span class="px-2.5 py-1 rounded-lg bg-green-500/20 text-green-400 font-bold text-xs">📱 M-Pesa</span>
+                            @elseif(strtolower($w->payment_method) === 'paypal')
+                                <span class="px-2.5 py-1 rounded-lg bg-blue-500/20 text-blue-400 font-bold text-xs">🅿️ PayPal</span>
+                            @elseif(strtolower($w->payment_method) === 'epay')
+                                <span class="px-2.5 py-1 rounded-lg bg-purple-500/20 text-purple-300 font-bold text-xs">⚡ ePay Payout</span>
+                            @else
+                                <span class="px-2.5 py-1 rounded-lg bg-indigo-500/20 text-indigo-300 font-bold text-xs">🏛 {{ strtoupper($w->payment_method) }}</span>
+                            @endif
+                        </td>
+                        <td class="p-4 font-mono text-xs text-gray-300">{{ $w->account_details }}</td>
                         <td class="p-4">
                             @if($w->status === 'approved')
                                 <span class="px-3 py-1 rounded-full bg-emerald-500/20 text-emerald-400 text-xs font-bold uppercase">Approved</span>

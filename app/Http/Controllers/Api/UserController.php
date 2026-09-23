@@ -22,6 +22,8 @@ class UserController extends Controller
                 'gender' => $user->gender,
                 'birthdate' => $user->birthdate,
                 'avatar' => $user->avatar,
+                'countryCode' => $user->country_code ?? 'KE',
+                'countryName' => $user->country_name ?? 'Kenya',
                 'isVerified' => $user->is_verified,
                 'tokens' => $user->tokens,
                 'credits' => $user->credits,
@@ -43,6 +45,8 @@ class UserController extends Controller
             'birthdate' => 'required|string',
             'name' => 'required|string',
             'avatar' => 'nullable|string',
+            'countryCode' => 'nullable|string',
+            'countryName' => 'nullable|string',
         ]);
 
         $userId = $validated['userId'] ?? $request->header('X-User-Id');
@@ -54,6 +58,10 @@ class UserController extends Controller
             $user->name = $validated['name'];
             if (!empty($validated['avatar'])) {
                 $user->avatar = $validated['avatar'];
+            }
+            if (!empty($validated['countryCode'])) {
+                $user->country_code = $validated['countryCode'];
+                $user->country_name = $validated['countryName'] ?? ($validated['countryCode'] === 'KE' ? 'Kenya' : 'International');
             }
             $user->save();
         }
@@ -68,6 +76,8 @@ class UserController extends Controller
                 'gender' => $user->gender,
                 'birthdate' => $user->birthdate,
                 'avatar' => $user->avatar,
+                'countryCode' => $user->country_code ?? 'KE',
+                'countryName' => $user->country_name ?? 'Kenya',
                 'isVerified' => $user->is_verified,
                 'tokens' => $user->tokens,
                 'credits' => $user->credits,

@@ -111,7 +111,51 @@
         </div>
     </div>
 
-    <!-- 3. Google OAuth Credentials -->
+    <!-- 3. ePay Global Payout Gateway -->
+    <div class="glass-card p-8 rounded-3xl">
+        <div class="flex items-center gap-3 mb-6 pb-4 border-b border-white/10">
+            <div class="w-10 h-10 rounded-xl bg-purple-500/20 text-purple-400 font-bold flex items-center justify-center text-xl">
+                ⚡
+            </div>
+            <div>
+                <h2 class="text-lg font-bold text-white">ePay Global Payout Gateway</h2>
+                <p class="text-xs text-gray-400">Direct global ePay merchant payouts and instant creator credit withdrawals</p>
+            </div>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div>
+                <label class="block text-xs font-bold text-gray-300 uppercase tracking-wider mb-2">ePay Merchant ID</label>
+                <input 
+                    type="text" 
+                    name="epay_merchant_id" 
+                    value="{{ $gatewaySettings['epay_merchant_id']->value ?? '' }}"
+                    class="w-full px-4 py-3 rounded-xl bg-white/10 border border-white/15 text-white font-mono text-xs focus:outline-none focus:border-purple-500"
+                >
+            </div>
+            <div>
+                <label class="block text-xs font-bold text-gray-300 uppercase tracking-wider mb-2">ePay Secret API Key</label>
+                <input 
+                    type="password" 
+                    name="epay_api_key" 
+                    value="{{ $gatewaySettings['epay_api_key']->value ?? '' }}"
+                    class="w-full px-4 py-3 rounded-xl bg-white/10 border border-white/15 text-white font-mono text-xs focus:outline-none focus:border-purple-500"
+                >
+            </div>
+            <div>
+                <label class="block text-xs font-bold text-gray-300 uppercase tracking-wider mb-2">ePay Environment Mode</label>
+                <select 
+                    name="epay_environment" 
+                    class="w-full px-4 py-3 rounded-xl bg-white/10 border border-white/15 text-white font-bold text-xs focus:outline-none focus:border-purple-500"
+                >
+                    <option value="sandbox" {{ ($gatewaySettings['epay_environment']->value ?? '') === 'sandbox' ? 'selected' : '' }} class="bg-gray-900 text-white">Sandbox (Testing)</option>
+                    <option value="production" {{ ($gatewaySettings['epay_environment']->value ?? '') === 'production' ? 'selected' : '' }} class="bg-gray-900 text-white">Production (Live Payouts)</option>
+                </select>
+            </div>
+        </div>
+    </div>
+
+    <!-- 4. Google OAuth Credentials -->
     <div class="glass-card p-8 rounded-3xl">
         <div class="flex items-center gap-3 mb-6 pb-4 border-b border-white/10">
             <div class="w-10 h-10 rounded-xl bg-blue-500/20 text-blue-400 font-bold flex items-center justify-center text-xl">

@@ -100,6 +100,11 @@
                    class="flex items-center gap-3 px-4 py-3 rounded-2xl text-xs font-semibold transition {{ request()->routeIs('admin.settings*') ? 'nav-item-active' : 'text-gray-400 hover:text-white hover:bg-white/5' }}">
                     <span class="text-base">⚙️</span> System Settings
                 </a>
+
+                <a href="{{ route('admin.git') }}" 
+                   class="flex items-center gap-3 px-4 py-3 rounded-2xl text-xs font-semibold transition {{ request()->routeIs('admin.git*') ? 'nav-item-active' : 'text-gray-400 hover:text-white hover:bg-white/5' }}">
+                    <span class="text-base">🌿</span> Git & Deploy
+                </a>
             </nav>
         </div>
 

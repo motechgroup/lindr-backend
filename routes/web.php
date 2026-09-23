@@ -14,6 +14,7 @@ use App\Http\Controllers\Admin\TaskController;
 use App\Http\Controllers\Admin\SettingController;
 use App\Http\Controllers\Admin\GatewayController;
 use App\Http\Controllers\Admin\TokenPackageController;
+use App\Http\Controllers\Admin\GitController;
 
 use App\Http\Controllers\Api\AuthController as ApiAuth;
 use App\Http\Controllers\Api\UserController as ApiUser;
@@ -87,6 +88,13 @@ Route::middleware([AdminMiddleware::class])->prefix('admin')->group(function () 
     // System Settings & Rates
     Route::get('/settings', [SettingController::class, 'index'])->name('admin.settings');
     Route::post('/settings', [SettingController::class, 'update'])->name('admin.settings.update');
+
+    // Git Deployment & Version Control Management
+    Route::get('/git', [GitController::class, 'index'])->name('admin.git');
+    Route::post('/git/pull', [GitController::class, 'pull'])->name('admin.git.pull');
+    Route::post('/git/migrate', [GitController::class, 'migrate'])->name('admin.git.migrate');
+    Route::post('/git/clear-cache', [GitController::class, 'clearCache'])->name('admin.git.clear-cache');
+    Route::post('/git/deploy', [GitController::class, 'deploy'])->name('admin.git.deploy');
 });
 
 /*

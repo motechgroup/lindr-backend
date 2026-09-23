@@ -18,6 +18,8 @@ class User extends Authenticatable
         'gender',
         'birthdate',
         'avatar',
+        'country_code',
+        'country_name',
         'tokens',
         'credits',
         'total_topup_tokens',
