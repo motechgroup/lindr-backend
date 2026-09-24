@@ -49,7 +49,9 @@ $googleCallbackHandler = function () {
             var hash = window.location.hash || "";
             var search = window.location.search || "";
             var target = "lindrapp://redirect" + hash + (hash ? "" : search);
-            window.location.replace(target);
+            try {
+                window.location.replace(target);
+            } catch(e) {}
         })();
     </script>
 </head>
@@ -67,8 +69,9 @@ $googleCallbackHandler = function () {
             var btn = document.getElementById("appLink");
             if (btn) btn.href = target;
             setTimeout(function() {
-                window.location.href = target;
-            }, 300);
+                try { window.location.href = target; } catch(e) {}
+                try { window.location.assign(target); } catch(e) {}
+            }, 100);
         })();
     </script>
 </body>
