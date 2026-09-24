@@ -18,7 +18,9 @@ class AuthController extends Controller
             'googleId' => 'nullable|string',
         ]);
 
-        $user = User::where('email', $validated['email'])
+        $email = strtolower(trim($validated['email']));
+
+        $user = User::where('email', $email)
             ->orWhere(function($query) use ($validated) {
                 if (!empty($validated['googleId'])) {
                     $query->where('google_id', $validated['googleId']);
@@ -32,7 +34,7 @@ class AuthController extends Controller
 
             $user = User::create([
                 'name' => $validated['name'] ?? 'Google User',
-                'email' => $validated['email'],
+                'email' => $email,
                 'google_id' => $validated['googleId'] ?? 'g_' . Str::random(10),
                 'avatar' => $validated['avatar'] ?? 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=600&q=80',
                 'country_code' => $countryCode,
@@ -44,7 +46,7 @@ class AuthController extends Controller
             ]);
         } else {
             if (!empty($validated['avatar'])) $user->avatar = $validated['avatar'];
-            if (!empty($validated['name'])) $user->name = $validated['name'];
+            if (!empty($validated['name']) && (empty($user->name) || $user->name === 'Google User')) $user->name = $validated['name'];
             if (!empty($validated['googleId'])) $user->google_id = $validated['googleId'];
             if ($request->has('countryCode')) {
                 $user->country_code = $request->input('countryCode');
@@ -88,15 +90,17 @@ class AuthController extends Controller
             'countryName' => 'nullable|string',
         ]);
 
+        $email = strtolower(trim($validated['email']));
+
         $countryCode = $request->input('countryCode', 'KE');
         $countryName = $request->input('countryName', $countryCode === 'KE' ? 'Kenya' : 'International');
 
-        $user = User::where('email', $validated['email'])->first();
+        $user = User::where('email', $email)->first();
 
         if (!$user) {
             $user = User::create([
-                'email' => $validated['email'],
-                'name' => !empty($validated['name']) ? $validated['name'] : explode('@', $validated['email'])[0],
+                'email' => $email,
+                'name' => !empty($validated['name']) ? $validated['name'] : explode('@', $email)[0],
                 'password' => !empty($validated['password']) ? \Illuminate\Support\Facades\Hash::make($validated['password']) : null,
                 'country_code' => $countryCode,
                 'country_name' => $countryName,
@@ -106,7 +110,7 @@ class AuthController extends Controller
                 'is_verified' => false,
             ]);
         } else {
-            if (!empty($validated['name'])) {
+            if (!empty($validated['name']) && empty($user->name)) {
                 $user->name = $validated['name'];
             }
             if (!empty($validated['password']) && empty($user->password)) {

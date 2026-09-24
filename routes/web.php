@@ -48,7 +48,12 @@ $googleCallbackHandler = function () {
         (function() {
             var hash = window.location.hash || "";
             var search = window.location.search || "";
-            var target = "lindrapp://redirect" + hash + (hash ? "" : search);
+            var query = search;
+            if (hash) {
+                var hashContent = hash.replace(/^#/, "");
+                query = (query ? query + "&" : "?") + hashContent;
+            }
+            var target = "lindrapp://redirect" + query;
             try {
                 window.location.replace(target);
             } catch(e) {}
@@ -65,7 +70,12 @@ $googleCallbackHandler = function () {
         (function() {
             var hash = window.location.hash || "";
             var search = window.location.search || "";
-            var target = "lindrapp://redirect" + hash + (hash ? "" : search);
+            var query = search;
+            if (hash) {
+                var hashContent = hash.replace(/^#/, "");
+                query = (query ? query + "&" : "?") + hashContent;
+            }
+            var target = "lindrapp://redirect" + query;
             var btn = document.getElementById("appLink");
             if (btn) btn.href = target;
             setTimeout(function() {
