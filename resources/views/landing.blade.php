@@ -160,9 +160,9 @@
         <div class="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4">
             <div>&copy; {{ date('Y') }} Lindr Platform Inc. All rights reserved.</div>
             <div class="flex items-center gap-6">
+                <a href="/privacy-policy" class="hover:text-gray-300 transition">Privacy Policy</a>
+                <a href="/terms-of-service" class="hover:text-gray-300 transition">Terms of Service</a>
                 <a href="/access" class="hover:text-gray-300 transition">Admin Portal Access</a>
-                <a href="#" class="hover:text-gray-300 transition">Privacy Policy</a>
-                <a href="#" class="hover:text-gray-300 transition">Terms of Service</a>
             </div>
         </div>
     </footer>

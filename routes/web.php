@@ -2,6 +2,7 @@
 
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\LandingController;
+use App\Http\Controllers\LegalController;
 use App\Http\Controllers\AdminAuthController;
 use App\Http\Controllers\AdminDashboardController;
 use App\Http\Controllers\Admin\UserController;
@@ -30,6 +31,10 @@ use App\Models\TokenPackage;
 |--------------------------------------------------------------------------
 */
 Route::get('/', [LandingController::class, 'index'])->name('landing');
+Route::get('/privacy-policy', [LegalController::class, 'privacy'])->name('privacy');
+Route::get('/privacy', [LegalController::class, 'privacy']);
+Route::get('/terms-of-service', [LegalController::class, 'terms'])->name('terms');
+Route::get('/terms', [LegalController::class, 'terms']);
 
 /*
 |--------------------------------------------------------------------------
