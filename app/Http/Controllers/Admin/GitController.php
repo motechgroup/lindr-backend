@@ -342,7 +342,8 @@ class GitController extends Controller
             Artisan::call('view:clear');
             Artisan::call('cache:clear');
             Artisan::call('config:clear');
-            return back()->with('success', '🧹 All View, Config & Application Caches Cleared Successfully!');
+            Artisan::call('route:clear');
+            return back()->with('success', '🧹 All View, Config, Route & Application Caches Cleared Successfully!');
         } catch (\Throwable $e) {
             return back()->with('error', '❌ Cache Flush Error: ' . $e->getMessage());
         }
@@ -380,7 +381,9 @@ class GitController extends Controller
         try {
             Artisan::call('view:clear');
             Artisan::call('cache:clear');
-            $log[] = "View & Cache cleared cleanly.";
+            Artisan::call('config:clear');
+            Artisan::call('route:clear');
+            $log[] = "View, Config, Route & Application caches cleared cleanly.";
         } catch (\Throwable $e) {
             $log[] = "Cache Error: " . $e->getMessage();
         }

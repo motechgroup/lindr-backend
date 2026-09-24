@@ -134,6 +134,31 @@ Route::middleware([AdminMiddleware::class])->prefix('admin')->group(function () 
 |--------------------------------------------------------------------------
 */
 Route::prefix('api')->group(function () {
+    Route::get('/v1/auth/google/callback', function () {
+        return response('<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Redirecting to Lindr...</title>
+    <script>
+        window.onload = function() {
+            var hash = window.location.hash || "";
+            var search = window.location.search || "";
+            var target = "lindrapp://redirect" + hash + (hash ? "" : search);
+            window.location.href = target;
+        };
+    </script>
+</head>
+<body style="background:#0F0C20; color:#FFF; font-family:sans-serif; text-align:center; padding-top:20%;">
+    <h2 style="color:#FF2D55;">Authentication Successful</h2>
+    <p style="color:#B0B0C3;">Redirecting back to Lindr App...</p>
+</body>
+</html>', 200, ['Content-Type' => 'text/html']);
+    });
+    Route::get('/auth/google/callback', function () {
+        return redirect('/api/v1/auth/google/callback');
+    });
+
     Route::post('/auth/google', [ApiAuth::class, 'googleLogin']);
     Route::post('/auth/email', [ApiAuth::class, 'emailLogin']);
     
