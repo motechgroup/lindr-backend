@@ -39,22 +39,39 @@ Route::get('/terms', [LegalController::class, 'terms']);
 // Google OAuth Redirect Handler for Expo App Session
 $googleCallbackHandler = function () {
     return response('<!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Redirecting to Lindr...</title>
+    <style>
+        body { background-color: #0F0C20; color: #FFFFFF; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; display: flex; align-items: center; justify-content: center; min-height: 100vh; margin: 0; padding: 20px; box-sizing: border-box; }
+        .card { background: rgba(255, 255, 255, 0.05); backdrop-filter: blur(20px); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 28px; padding: 36px 24px; text-align: center; max-width: 400px; width: 100%; box-shadow: 0 20px 40px rgba(0,0,0,0.5); }
+        .icon { width: 64px; height: 64px; border-radius: 20px; background: linear-gradient(135deg, #FF2D55, #9C27B0); display: inline-flex; align-items: center; justify-content: center; font-size: 32px; font-weight: bold; margin-bottom: 20px; box-shadow: 0 10px 25px rgba(255, 45, 85, 0.4); }
+        h2 { font-size: 22px; font-weight: 800; margin: 0 0 10px 0; color: #FFFFFF; }
+        p { font-size: 14px; color: #B0B0C3; margin: 0 0 24px 0; line-height: 1.5; }
+        .btn { display: inline-block; width: 100%; padding: 16px 0; background: linear-gradient(90deg, #FF2D55, #9C27B0); color: #FFFFFF; font-size: 16px; font-weight: 700; text-decoration: none; border-radius: 18px; box-shadow: 0 10px 20px rgba(255, 45, 85, 0.3); box-sizing: border-box; }
+    </style>
     <script>
-        window.onload = function() {
+        function openApp() {
             var hash = window.location.hash || "";
             var search = window.location.search || "";
             var target = "lindrapp://redirect" + hash + (hash ? "" : search);
             window.location.href = target;
+        }
+        window.onload = function() {
+            openApp();
+            setTimeout(openApp, 800);
         };
     </script>
 </head>
-<body style="background:#0F0C20; color:#FFF; font-family:sans-serif; text-align:center; padding-top:20%;">
-    <h2 style="color:#FF2D55;">Authentication Successful</h2>
-    <p style="color:#B0B0C3;">Redirecting back to Lindr App...</p>
+<body>
+    <div class="card">
+        <div class="icon">L</div>
+        <h2>Authentication Successful! 🎉</h2>
+        <p>Google authentication complete. Returning to your Lindr Mobile App...</p>
+        <a href="javascript:void(0)" onclick="openApp()" class="btn">Open Lindr App</a>
+    </div>
 </body>
 </html>', 200, ['Content-Type' => 'text/html']);
 };
