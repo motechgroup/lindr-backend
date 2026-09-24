@@ -36,7 +36,7 @@
 </div>
 
 <!-- Users List Table -->
-<div class="glass-card p-8 rounded-3xl" x-data="{ topupModal: false, editModal: false, activeUser: null }">
+<div class="glass-card p-8 rounded-3xl" x-data="{ topupModal: false, editModal: false, deleteModal: false, activeUser: null }">
     <div class="overflow-x-auto">
         <table class="w-full text-left text-sm text-gray-300">
             <thead class="text-xs uppercase bg-white/5 text-gray-400 font-bold">
@@ -131,14 +131,14 @@
                                     </button>
                                 </form>
 
-                                <!-- Delete Account -->
-                                <form action="{{ route('admin.users.destroy', $u->id) }}" method="POST" class="inline" onsubmit="return confirm('Are you sure you want to permanently delete user {{ addslashes($u->name) }}? This cannot be undone.')">
-                                    @csrf
-                                    @method('DELETE')
-                                    <button type="submit" class="px-3 py-1.5 rounded-xl bg-red-500/10 border border-red-500/20 text-red-400 text-xs font-semibold hover:bg-red-500/20 transition">
-                                        🗑️ Delete
-                                    </button>
-                                </form>
+                                <!-- Delete Account Launcher -->
+                                <button 
+                                    type="button" 
+                                    @click="activeUser = u; deleteModal = true" 
+                                    class="px-3 py-1.5 rounded-xl bg-red-500/10 border border-red-500/20 text-red-400 text-xs font-semibold hover:bg-red-500/20 transition"
+                                >
+                                    🗑️ Delete
+                                </button>
                             </div>
                         </td>
                     </tr>
@@ -265,6 +265,35 @@
                     <button type="button" @click="editModal = false" class="px-5 py-2.5 rounded-2xl bg-white/10 text-xs font-bold hover:bg-white/20">Cancel</button>
                     <button type="submit" class="px-6 py-2.5 rounded-2xl bg-blue-600 text-white font-extrabold text-xs shadow-lg hover:bg-blue-500">Save Changes</button>
                 </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Delete Account Confirmation Modal -->
+    <div 
+        x-show="deleteModal" 
+        x-cloak 
+        class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md"
+    >
+        <div 
+            @click.away="deleteModal = false" 
+            class="glass-card p-8 rounded-3xl max-w-md w-full border border-red-500/40 shadow-2xl relative"
+        >
+            <button @click="deleteModal = false" class="absolute top-4 right-4 text-gray-400 hover:text-white text-xl">✕</button>
+            <div class="w-12 h-12 rounded-2xl bg-red-500/20 text-red-400 text-2xl flex items-center justify-center mb-4">
+                ⚠️
+            </div>
+            <h3 class="text-xl font-bold text-white mb-2">Delete User Account</h3>
+            <p class="text-xs text-gray-300 mb-6 leading-relaxed">
+                Are you sure you want to permanently delete the account for <span class="text-red-400 font-bold" x-text="activeUser ? activeUser.name : ''"></span> (<span class="font-mono text-gray-400" x-text="activeUser ? activeUser.email : ''"></span>)?
+                <br><span class="text-red-400 font-semibold mt-1 inline-block">This action cannot be undone.</span>
+            </p>
+
+            <form :action="activeUser ? '/admin/users/' + activeUser.id : '#'" method="POST" class="flex justify-end gap-3">
+                @csrf
+                @method('DELETE')
+                <button type="button" @click="deleteModal = false" class="px-5 py-2.5 rounded-2xl bg-white/10 text-xs font-bold hover:bg-white/20">Cancel</button>
+                <button type="submit" class="px-6 py-2.5 rounded-2xl bg-red-600 text-white font-extrabold text-xs shadow-lg hover:bg-red-500">Yes, Delete Account</button>
             </form>
         </div>
     </div>

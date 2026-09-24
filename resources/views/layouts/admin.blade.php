@@ -10,6 +10,9 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js" defer></script>
     <style>
+        [x-cloak] {
+            display: none !important;
+        }
         body {
             font-family: 'Plus Jakarta Sans', sans-serif;
             background-color: #0F0C20;
