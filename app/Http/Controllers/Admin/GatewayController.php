@@ -11,6 +11,17 @@ class GatewayController extends Controller
     public function index()
     {
         $gatewaySettings = SystemSetting::whereIn('category', ['gateways', 'google'])->get()->keyBy('key');
+
+        foreach ($gatewaySettings as $key => $setting) {
+            if (empty($setting->value) || str_contains($setting->value, 'your-google') || str_contains($setting->value, 'your_')) {
+                $envKey = strtoupper($key);
+                $envValue = env($envKey);
+                if (!empty($envValue)) {
+                    $setting->value = $envValue;
+                }
+            }
+        }
+
         return view('admin.gateways.index', compact('gatewaySettings'));
     }
 
