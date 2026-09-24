@@ -48,24 +48,30 @@ $googleCallbackHandler = function () {
         function getRedirectTarget() {
             var search = window.location.search || "";
             var hash = window.location.hash || "";
+            var combined = (search ? search.substring(1) + "&" : "") + (hash ? hash.substring(1) : "");
+            
             var baseTarget = "lindrapp://redirect";
+            var tokenParams = [];
 
-            try {
-                var urlParams = new URLSearchParams(search);
-                var stateRedirect = urlParams.get("state");
-                if (stateRedirect) {
-                    baseTarget = decodeURIComponent(stateRedirect);
+            if (combined) {
+                var pairs = combined.split("&");
+                for (var i = 0; i < pairs.length; i++) {
+                    if (!pairs[i]) continue;
+                    var parts = pairs[i].split("=");
+                    var key = decodeURIComponent(parts[0] || "");
+                    var val = parts.slice(1).join("=");
+                    
+                    if (key === "state" && val) {
+                        try {
+                            baseTarget = decodeURIComponent(val);
+                        } catch(e) {}
+                    } else if (key && key !== "state") {
+                        tokenParams.push(pairs[i]);
+                    }
                 }
-            } catch(e) {}
+            }
 
-            var params = [];
-            if (search) {
-                params.push(search.replace(/^\?/, ""));
-            }
-            if (hash) {
-                params.push(hash.replace(/^#/, ""));
-            }
-            var query = params.length > 0 ? (baseTarget.indexOf("?") !== -1 ? "&" : "?") + params.join("&") : "";
+            var query = tokenParams.length > 0 ? (baseTarget.indexOf("?") !== -1 ? "&" : "?") + tokenParams.join("&") : "";
             return baseTarget + query;
         }
 
