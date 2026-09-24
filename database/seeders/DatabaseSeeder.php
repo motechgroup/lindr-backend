@@ -168,9 +168,9 @@ class DatabaseSeeder extends Seeder
             ['key' => 'epay_environment', 'value' => env('EPAY_ENVIRONMENT', 'sandbox'), 'category' => 'gateways', 'description' => 'ePay Environment (sandbox/production)'],
 
             // Google OAuth Credentials
-            ['key' => 'google_web_client_id', 'value' => 'your-google-web-client-id.apps.googleusercontent.com', 'category' => 'google', 'description' => 'Google Web OAuth Client ID'],
-            ['key' => 'google_ios_client_id', 'value' => 'your-google-ios-client-id.apps.googleusercontent.com', 'category' => 'google', 'description' => 'Google iOS Client ID'],
-            ['key' => 'google_android_client_id', 'value' => 'your-google-android-client-id.apps.googleusercontent.com', 'category' => 'google', 'description' => 'Google Android Client ID'],
+            ['key' => 'google_web_client_id', 'value' => env('GOOGLE_WEB_CLIENT_ID', '1060789665991-3gi5o4p924p5097k5dcrjgbnh1jlk2nt.apps.googleusercontent.com'), 'category' => 'google', 'description' => 'Google Web OAuth Client ID'],
+            ['key' => 'google_ios_client_id', 'value' => env('GOOGLE_IOS_CLIENT_ID', 'your-google-ios-client-id.apps.googleusercontent.com'), 'category' => 'google', 'description' => 'Google iOS Client ID'],
+            ['key' => 'google_android_client_id', 'value' => env('GOOGLE_ANDROID_CLIENT_ID', '1060789665991-3gi5o4p924p5097k5dcrjgbnh1jlk2nt.apps.googleusercontent.com'), 'category' => 'google', 'description' => 'Google Android Client ID'],
 
             // Video Call Cost Rates (Tokens / Min for Male Levels)
             ['key' => 'male_call_rate_level1', 'value' => '60', 'category' => 'call_rates', 'description' => 'Level 1 Male Video Call Cost (Tokens/min)'],
