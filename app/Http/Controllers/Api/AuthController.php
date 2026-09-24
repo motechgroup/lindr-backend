@@ -41,7 +41,7 @@ class AuthController extends Controller
                 'country_name' => $countryName,
                 'tokens' => 350,
                 'credits' => 0,
-                'gender' => null,
+                'gender' => 'pending',
                 'birthdate' => null,
                 'is_verified' => false,
             ]);
@@ -76,7 +76,7 @@ class AuthController extends Controller
                 'expPoints' => $user->exp_points,
                 'level' => $user->level,
                 'isLoggedIn' => true,
-                'hasCompletedOnboarding' => !empty($user->gender) && !empty($user->birthdate),
+                'hasCompletedOnboarding' => in_array($user->gender, ['male', 'female']) && !empty($user->birthdate),
             ]
         ]);
     }
@@ -107,7 +107,7 @@ class AuthController extends Controller
                 'country_name' => $countryName,
                 'tokens' => 350,
                 'credits' => 0,
-                'gender' => null,
+                'gender' => 'pending',
                 'birthdate' => null,
                 'is_verified' => false,
             ]);
@@ -141,7 +141,7 @@ class AuthController extends Controller
                 'expPoints' => $user->exp_points,
                 'level' => $user->level,
                 'isLoggedIn' => true,
-                'hasCompletedOnboarding' => !empty($user->gender) && !empty($user->birthdate),
+                'hasCompletedOnboarding' => in_array($user->gender, ['male', 'female']) && !empty($user->birthdate),
             ]
         ]);
     }
