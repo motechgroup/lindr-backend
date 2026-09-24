@@ -77,7 +77,11 @@ class UserController extends Controller
             $user->birthdate = $validated['birthdate'];
             $user->name = $validated['name'];
             if (!empty($validated['avatar'])) {
-                $user->avatar = $validated['avatar'];
+                $isCurrentCustom = !empty($user->avatar) && !str_contains($user->avatar, 'unsplash.com');
+                $isNewUnsplash = str_contains($validated['avatar'], 'unsplash.com');
+                if (!$isCurrentCustom || !$isNewUnsplash) {
+                    $user->avatar = $validated['avatar'];
+                }
             }
             if (!empty($validated['countryCode'])) {
                 $user->country_code = $validated['countryCode'];
