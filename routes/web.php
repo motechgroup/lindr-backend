@@ -37,7 +37,7 @@ Route::get('/terms-of-service', [LegalController::class, 'terms'])->name('terms'
 Route::get('/terms', [LegalController::class, 'terms']);
 
 // Google OAuth Redirect Handler for Expo App Session
-Route::get('/api/v1/auth/google/callback', function () {
+$googleCallbackHandler = function () {
     return response('<!DOCTYPE html>
 <html>
 <head>
@@ -57,10 +57,13 @@ Route::get('/api/v1/auth/google/callback', function () {
     <p style="color:#B0B0C3;">Redirecting back to Lindr App...</p>
 </body>
 </html>', 200, ['Content-Type' => 'text/html']);
-});
-Route::get('/api/auth/google/callback', function () {
-    return redirect('/api/v1/auth/google/callback');
-});
+};
+
+Route::get('/api/v1/auth/google/callback', $googleCallbackHandler);
+Route::get('/api/auth/google/callback', $googleCallbackHandler);
+Route::get('/v1/auth/google/callback', $googleCallbackHandler);
+Route::get('/auth/google/callback', $googleCallbackHandler);
+Route::any('{any}', $googleCallbackHandler)->where('any', '.*google/callback.*');
 
 /*
 |--------------------------------------------------------------------------

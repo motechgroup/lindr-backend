@@ -339,6 +339,13 @@ class GitController extends Controller
     public function clearCache(Request $request)
     {
         try {
+            if (File::exists(base_path('bootstrap/cache'))) {
+                foreach (File::files(base_path('bootstrap/cache')) as $f) {
+                    if ($f->getFilename() !== '.gitignore') {
+                        @File::delete($f->getPathname());
+                    }
+                }
+            }
             Artisan::call('view:clear');
             Artisan::call('cache:clear');
             Artisan::call('config:clear');
@@ -376,9 +383,16 @@ class GitController extends Controller
             $log[] = "Migration Error: " . $e->getMessage();
         }
 
-        // 3. Clear Caches
+        // 3. Clear Caches & Delete Compiled Route/Config Cache Files
         $log[] = "\n--- CACHE FLUSH ---";
         try {
+            if (File::exists(base_path('bootstrap/cache'))) {
+                foreach (File::files(base_path('bootstrap/cache')) as $f) {
+                    if ($f->getFilename() !== '.gitignore') {
+                        @File::delete($f->getPathname());
+                    }
+                }
+            }
             Artisan::call('view:clear');
             Artisan::call('cache:clear');
             Artisan::call('config:clear');
