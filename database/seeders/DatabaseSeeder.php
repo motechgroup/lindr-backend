@@ -198,7 +198,7 @@ class DatabaseSeeder extends Seeder
             ['key' => 'max_call_duration_minutes', 'value' => '60', 'category' => 'agora', 'description' => 'Maximum Continuous Video Call Duration (Mins)'],
 
             // App Rules & Bonus Settings
-            ['key' => 'new_user_welcome_tokens', 'value' => '350', 'category' => 'app_rules', 'description' => 'Welcome Gift Tokens for New Male Users'],
+            ['key' => 'new_user_welcome_tokens', 'value' => '0', 'category' => 'app_rules', 'description' => 'Welcome Gift Tokens for New Male Users'],
             ['key' => 'biometric_verification_required', 'value' => '1', 'category' => 'app_rules', 'description' => 'Require 4-Step Verification Before Video Calling (1=Yes, 0=No)'],
             ['key' => 'daily_login_bonus_exp', 'value' => '50', 'category' => 'app_rules', 'description' => 'Daily Login Bonus EXP Points'],
         ];

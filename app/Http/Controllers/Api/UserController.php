@@ -68,7 +68,7 @@ class UserController extends Controller
                 'avatar' => $validated['avatar'] ?? 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=600&q=80',
                 'country_code' => $validated['countryCode'] ?? 'KE',
                 'country_name' => $validated['countryName'] ?? 'Kenya',
-                'tokens' => 350,
+                'tokens' => 0,
                 'credits' => 0,
                 'is_verified' => false,
             ]);

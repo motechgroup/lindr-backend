@@ -24,7 +24,7 @@ return new class extends Migration
                 $table->text('avatar')->nullable();
                 $table->string('country_code')->default('KE');
                 $table->string('country_name')->default('Kenya');
-                $table->integer('tokens')->default(350);
+                $table->integer('tokens')->default(0);
                 $table->integer('credits')->default(0);
                 $table->integer('total_topup_tokens')->default(0);
                 $table->integer('total_credits_earned')->default(0);
