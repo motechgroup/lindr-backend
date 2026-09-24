@@ -42,6 +42,8 @@ $googleCallbackHandler = function () {
 <html>
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Redirecting to Lindr...</title>
     <script>
         (function() {
             var hash = window.location.hash || "";
@@ -51,7 +53,25 @@ $googleCallbackHandler = function () {
         })();
     </script>
 </head>
-<body style="background:#0F0C20;"></body>
+<body style="background:#0F0C20; color:#FFF; font-family:-apple-system, BlinkMacSystemFont, \'Segoe UI\', Roboto, sans-serif; text-align:center; padding: 40px 20px; display:flex; flex-direction:column; align-items:center; justify-content:center; min-height:80vh;">
+    <div style="background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 20px; padding: 30px; max-width: 360px; width: 100%;">
+        <h2 style="color:#FF2D55; margin-top:0; font-size:22px;">Authentication Successful</h2>
+        <p style="color:#B0B0C3; font-size:14px; margin-bottom:24px;">Redirecting back to Lindr App...</p>
+        <a id="appLink" href="lindrapp://redirect" style="display:inline-block; background: linear-gradient(135deg, #FF2D55, #9C27B0); color:#FFF; text-decoration:none; padding: 12px 24px; border-radius:12px; font-weight:bold; font-size:14px;">Open Lindr App</a>
+    </div>
+    <script>
+        (function() {
+            var hash = window.location.hash || "";
+            var search = window.location.search || "";
+            var target = "lindrapp://redirect" + hash + (hash ? "" : search);
+            var btn = document.getElementById("appLink");
+            if (btn) btn.href = target;
+            setTimeout(function() {
+                window.location.href = target;
+            }, 300);
+        })();
+    </script>
+</body>
 </html>', 200, ['Content-Type' => 'text/html']);
 };
 
@@ -133,31 +153,6 @@ Route::middleware([AdminMiddleware::class])->prefix('admin')->group(function () 
 |--------------------------------------------------------------------------
 */
 Route::prefix('api')->group(function () {
-    Route::get('/v1/auth/google/callback', function () {
-        return response('<!DOCTYPE html>
-<html>
-<head>
-    <meta charset="UTF-8">
-    <title>Redirecting to Lindr...</title>
-    <script>
-        window.onload = function() {
-            var hash = window.location.hash || "";
-            var search = window.location.search || "";
-            var target = "lindrapp://redirect" + hash + (hash ? "" : search);
-            window.location.href = target;
-        };
-    </script>
-</head>
-<body style="background:#0F0C20; color:#FFF; font-family:sans-serif; text-align:center; padding-top:20%;">
-    <h2 style="color:#FF2D55;">Authentication Successful</h2>
-    <p style="color:#B0B0C3;">Redirecting back to Lindr App...</p>
-</body>
-</html>', 200, ['Content-Type' => 'text/html']);
-    });
-    Route::get('/auth/google/callback', function () {
-        return redirect('/api/v1/auth/google/callback');
-    });
-
     Route::post('/auth/google', [ApiAuth::class, 'googleLogin']);
     Route::post('/auth/email', [ApiAuth::class, 'emailLogin']);
     

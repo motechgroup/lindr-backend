@@ -50,9 +50,29 @@ class UserController extends Controller
         ]);
 
         $userId = $validated['userId'] ?? $request->header('X-User-Id');
-        $user = User::find($userId) ?? User::first();
+        $email = $request->input('email');
 
-        if ($user) {
+        $user = null;
+        if (!empty($userId)) {
+            $user = User::find($userId);
+        }
+        if (!$user && !empty($email)) {
+            $user = User::where('email', $email)->first();
+        }
+        if (!$user) {
+            $user = User::create([
+                'name' => $validated['name'],
+                'email' => $email ?? ('user_' . \Illuminate\Support\Str::random(6) . '@lindr.app'),
+                'gender' => $validated['gender'],
+                'birthdate' => $validated['birthdate'],
+                'avatar' => $validated['avatar'] ?? 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=600&q=80',
+                'country_code' => $validated['countryCode'] ?? 'KE',
+                'country_name' => $validated['countryName'] ?? 'Kenya',
+                'tokens' => 350,
+                'credits' => 0,
+                'is_verified' => false,
+            ]);
+        } else {
             $user->gender = $validated['gender'];
             $user->birthdate = $validated['birthdate'];
             $user->name = $validated['name'];
