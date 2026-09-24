@@ -83,6 +83,7 @@ class AuthController extends Controller
         $validated = $request->validate([
             'email' => 'required|email',
             'password' => 'nullable|string',
+            'name' => 'nullable|string',
             'countryCode' => 'nullable|string',
             'countryName' => 'nullable|string',
         ]);
@@ -90,18 +91,29 @@ class AuthController extends Controller
         $countryCode = $request->input('countryCode', 'KE');
         $countryName = $request->input('countryName', $countryCode === 'KE' ? 'Kenya' : 'International');
 
-        $user = User::firstOrCreate(
-            ['email' => $validated['email']],
-            [
-                'name' => explode('@', $validated['email'])[0],
+        $user = User::where('email', $validated['email'])->first();
+
+        if (!$user) {
+            $user = User::create([
+                'email' => $validated['email'],
+                'name' => !empty($validated['name']) ? $validated['name'] : explode('@', $validated['email'])[0],
+                'password' => !empty($validated['password']) ? \Illuminate\Support\Facades\Hash::make($validated['password']) : null,
                 'country_code' => $countryCode,
                 'country_name' => $countryName,
                 'tokens' => 350,
                 'credits' => 0,
                 'gender' => 'male',
                 'is_verified' => false,
-            ]
-        );
+            ]);
+        } else {
+            if (!empty($validated['name'])) {
+                $user->name = $validated['name'];
+            }
+            if (!empty($validated['password']) && empty($user->password)) {
+                $user->password = \Illuminate\Support\Facades\Hash::make($validated['password']);
+            }
+            $user->save();
+        }
 
         return response()->json([
             'status' => 'success',
