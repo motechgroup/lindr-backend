@@ -69,40 +69,38 @@ class GitController extends Controller
             $repoUrl = trim($remoteRes['output']);
         }
 
-        // Current HEAD Commit
-        $headRes = $this->runCmd('git log -1 --pretty=format:"%h|%s|%an|%cr"');
+        // Current HEAD Commit & Recent Commits
         $currentCommit = null;
-        if ($headRes['success'] && strpos($headRes['output'], '|') !== false) {
-            $parts = explode('|', $headRes['output'], 4);
-            $currentCommit = [
-                'hash' => $parts[0] ?? '',
-                'message' => $parts[1] ?? '',
-                'author' => $parts[2] ?? '',
-                'time' => $parts[3] ?? '',
-            ];
-        }
-
-        // Recent Commits Log
-        $logsRes = $this->runCmd('git log -n 12 --pretty=format:"%h|%s|%an|%cr"');
         $recentCommits = [];
+        $logsRes = $this->runCmd('git log -n 12 --pretty=format:"%h|%s|%an|%cr"');
+
         if ($logsRes['success'] && !empty($logsRes['output'])) {
             $lines = explode("\n", trim($logsRes['output']));
-            foreach ($lines as $line) {
+            foreach ($lines as $index => $line) {
                 if (strpos($line, '|') !== false) {
                     $p = explode('|', $line, 4);
-                    $recentCommits[] = [
+                    $commitObj = [
                         'hash' => $p[0] ?? '',
                         'message' => $p[1] ?? '',
                         'author' => $p[2] ?? '',
                         'time' => $p[3] ?? '',
                     ];
+                    if ($index === 0) $currentCommit = $commitObj;
+                    $recentCommits[] = $commitObj;
                 }
+            }
+        } else {
+            // Fallback to GitHub API when shell_exec is restricted on shared hosting
+            $apiCommits = $this->fetchGitHubCommitsViaApi();
+            if (!empty($apiCommits)) {
+                $currentCommit = $apiCommits[0];
+                $recentCommits = $apiCommits;
             }
         }
 
         // Git Status (Modified files)
         $statusRes = $this->runCmd('git status -s');
-        $gitStatus = $statusRes['success'] ? trim($statusRes['output']) : '';
+        $gitStatus = $statusRes['success'] ? trim($statusRes['output']) : 'Shared Hosting (Native PHP Zip Sync Active)';
 
         // Pending Migrations Check
         $pendingMigrations = [];
@@ -154,6 +152,159 @@ class GitController extends Controller
         ));
     }
 
+    private function pullViaZipArchive($branch = 'main')
+    {
+        $zipUrl = "https://github.com/motechgroup/lindr-backend/archive/refs/heads/{$branch}.zip";
+        $tempZipPath = storage_path("app/latest_repo.zip");
+        
+        // Download zip using cURL or file_get_contents
+        $zipData = null;
+        if (function_exists('curl_init')) {
+            $ch = curl_init($zipUrl);
+            curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+            curl_setopt($ch, CURLOPT_FOLLOWLOCATION, true);
+            curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
+            curl_setopt($ch, CURLOPT_USERAGENT, 'Lindr-App-Updater/1.0');
+            $zipData = curl_exec($ch);
+            $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+            curl_close($ch);
+
+            if ($httpCode !== 200) {
+                $zipData = null;
+            }
+        }
+
+        if (empty($zipData)) {
+            $opts = [
+                'http' => [
+                    'header' => "User-Agent: Lindr-App-Updater/1.0\r\n"
+                ],
+                'ssl' => [
+                    'verify_peer' => false,
+                    'verify_peer_name' => false,
+                ]
+            ];
+            $zipData = @file_get_contents($zipUrl, false, stream_context_create($opts));
+        }
+
+        if (empty($zipData)) {
+            return [
+                'success' => false,
+                'output' => 'Failed to download GitHub source zip package.'
+            ];
+        }
+
+        File::put($tempZipPath, $zipData);
+
+        if (!class_exists('ZipArchive')) {
+            return [
+                'success' => false,
+                'output' => 'PHP ZipArchive extension is not enabled on this host.'
+            ];
+        }
+
+        $zip = new \ZipArchive();
+        if ($zip->open($tempZipPath) !== true) {
+            return [
+                'success' => false,
+                'output' => 'Failed to open downloaded source zip package.'
+            ];
+        }
+
+        $extractedCount = 0;
+        $basePath = base_path();
+
+        for ($i = 0; $i < $zip->numFiles; $i++) {
+            $stat = $zip->statIndex($i);
+            $entryName = $stat['name'];
+
+            // Remove top-level directory in GitHub zip (e.g. lindr-backend-main/)
+            $relativePath = preg_replace('/^[^\/]+\//', '', $entryName);
+
+            if (empty($relativePath)) continue;
+
+            // Skip protected paths
+            if (
+                str_starts_with($relativePath, '.env') ||
+                str_starts_with($relativePath, 'storage/') ||
+                str_starts_with($relativePath, 'database/database.sqlite')
+            ) {
+                continue;
+            }
+
+            $targetPath = $basePath . '/' . $relativePath;
+
+            if (str_ends_with($entryName, '/')) {
+                if (!File::exists($targetPath)) {
+                    File::makeDirectory($targetPath, 0755, true, true);
+                }
+            } else {
+                $dir = dirname($targetPath);
+                if (!File::exists($dir)) {
+                    File::makeDirectory($dir, 0755, true, true);
+                }
+                $content = $zip->getFromIndex($i);
+                if ($content !== false) {
+                    File::put($targetPath, $content);
+                    $extractedCount++;
+                }
+            }
+        }
+
+        $zip->close();
+        @File::delete($tempZipPath);
+
+        return [
+            'success' => true,
+            'output' => "Successfully updated {$extractedCount} files directly via GitHub Zip Sync (PHP Native)."
+        ];
+    }
+
+    private function fetchGitHubCommitsViaApi()
+    {
+        $url = "https://api.github.com/repos/motechgroup/lindr-backend/commits?per_page=12";
+        $json = null;
+
+        if (function_exists('curl_init')) {
+            $ch = curl_init($url);
+            curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+            curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
+            curl_setopt($ch, CURLOPT_USERAGENT, 'Lindr-App-Updater/1.0');
+            $json = curl_exec($ch);
+            curl_close($ch);
+        }
+
+        if (empty($json)) {
+            $opts = [
+                'http' => [
+                    'method' => 'GET',
+                    'header' => "User-Agent: Lindr-App-Updater/1.0\r\n"
+                ],
+                'ssl' => [
+                    'verify_peer' => false,
+                    'verify_peer_name' => false,
+                ]
+            ];
+            $json = @file_get_contents($url, false, stream_context_create($opts));
+        }
+
+        $commits = [];
+        if (!empty($json)) {
+            $data = json_decode($json, true);
+            if (is_array($data)) {
+                foreach ($data as $c) {
+                    $commits[] = [
+                        'hash' => substr($c['sha'] ?? '', 0, 7),
+                        'message' => strtok($c['commit']['message'] ?? '', "\n"),
+                        'author' => $c['commit']['author']['name'] ?? 'GitHub',
+                        'time' => isset($c['commit']['author']['date']) ? date('M d, Y H:i', strtotime($c['commit']['author']['date'])) : '',
+                    ];
+                }
+            }
+        }
+        return $commits;
+    }
+
     public function pull(Request $request)
     {
         $branchRes = $this->runCmd('git rev-parse --abbrev-ref HEAD');
@@ -162,10 +313,16 @@ class GitController extends Controller
         $res = $this->runCmd("git pull origin " . \escapeshellarg($branch));
 
         if ($res['success']) {
-            return back()->with('success', '⚡ Git Pull Successful! New code updated from GitHub repository. Log: ' . $res['output']);
+            return back()->with('success', '⚡ Git Pull Successful! New code updated from GitHub. Output: ' . $res['output']);
         }
 
-        return back()->with('error', '❌ Git Pull Failed: ' . $res['output']);
+        // Fallback to Native PHP Zip sync when shell_exec is restricted
+        $zipRes = $this->pullViaZipArchive($branch);
+        if ($zipRes['success']) {
+            return back()->with('success', '⚡ Code Updated Successfully from GitHub! (PHP Zip Fallback Engine). Log: ' . $zipRes['output']);
+        }
+
+        return back()->with('error', '❌ Update Failed: ' . $zipRes['output']);
     }
 
     public function migrate(Request $request)
@@ -195,12 +352,19 @@ class GitController extends Controller
     {
         $log = [];
 
-        // 1. Git Pull
+        // 1. Git Pull or Native PHP Zip Sync
         $branchRes = $this->runCmd('git rev-parse --abbrev-ref HEAD');
         $branch = $branchRes['success'] ? trim($branchRes['output']) : 'main';
         $pullRes = $this->runCmd("git pull origin " . \escapeshellarg($branch));
-        $log[] = "--- GIT PULL ---";
-        $log[] = $pullRes['output'];
+
+        if ($pullRes['success']) {
+            $log[] = "--- GIT PULL (CLI) ---";
+            $log[] = $pullRes['output'];
+        } else {
+            $zipRes = $this->pullViaZipArchive($branch);
+            $log[] = "--- GITHUB SYNC (PHP Native Zip Engine) ---";
+            $log[] = $zipRes['output'];
+        }
 
         // 2. Migrate
         $log[] = "\n--- DATABASE MIGRATIONS ---";
