@@ -46,8 +46,18 @@ $googleCallbackHandler = function () {
     <title>Redirecting to Lindr...</title>
     <script>
         function getRedirectTarget() {
-            var hash = window.location.hash || "";
             var search = window.location.search || "";
+            var hash = window.location.hash || "";
+            var baseTarget = "lindrapp://redirect";
+
+            try {
+                var urlParams = new URLSearchParams(search);
+                var stateRedirect = urlParams.get("state");
+                if (stateRedirect) {
+                    baseTarget = decodeURIComponent(stateRedirect);
+                }
+            } catch(e) {}
+
             var params = [];
             if (search) {
                 params.push(search.replace(/^\?/, ""));
@@ -55,8 +65,8 @@ $googleCallbackHandler = function () {
             if (hash) {
                 params.push(hash.replace(/^#/, ""));
             }
-            var query = params.length > 0 ? "?" + params.join("&") : "";
-            return "lindrapp://redirect" + query;
+            var query = params.length > 0 ? (baseTarget.indexOf("?") !== -1 ? "&" : "?") + params.join("&") : "";
+            return baseTarget + query;
         }
 
         var target = getRedirectTarget();
