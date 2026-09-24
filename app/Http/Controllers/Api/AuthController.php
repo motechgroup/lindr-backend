@@ -41,7 +41,8 @@ class AuthController extends Controller
                 'country_name' => $countryName,
                 'tokens' => 350,
                 'credits' => 0,
-                'gender' => 'male',
+                'gender' => null,
+                'birthdate' => null,
                 'is_verified' => false,
             ]);
         } else {
@@ -106,7 +107,8 @@ class AuthController extends Controller
                 'country_name' => $countryName,
                 'tokens' => 350,
                 'credits' => 0,
-                'gender' => 'male',
+                'gender' => null,
+                'birthdate' => null,
                 'is_verified' => false,
             ]);
         } else {
