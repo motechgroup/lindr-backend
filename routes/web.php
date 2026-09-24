@@ -113,8 +113,12 @@ Route::middleware([AdminMiddleware::class])->prefix('admin')->group(function () 
     
     // Users Management
     Route::get('/users', [UserController::class, 'index'])->name('admin.users');
+    Route::post('/users/{id}/topup', [UserController::class, 'topup'])->name('admin.users.topup');
     Route::post('/users/{id}/balance', [UserController::class, 'updateBalance'])->name('admin.users.balance');
+    Route::post('/users/{id}/profile', [UserController::class, 'updateProfile'])->name('admin.users.profile');
     Route::post('/users/{id}/verify', [UserController::class, 'toggleVerify'])->name('admin.users.verify');
+    Route::get('/users/{id}/history', [UserController::class, 'history'])->name('admin.users.history');
+    Route::delete('/users/{id}', [UserController::class, 'destroy'])->name('admin.users.destroy');
 
     // Video Calls Logs
     Route::get('/calls', [CallController::class, 'index'])->name('admin.calls');
