@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\CallSession;
 use App\Models\ChatMessage;
 use App\Models\User;
+use App\Models\Transaction;
 use Illuminate\Http\Request;
 
 class InteractionController extends Controller
@@ -177,19 +178,58 @@ class InteractionController extends Controller
             'giftCostTokens' => 'nullable|integer',
         ]);
 
+        $sender = User::find($validated['senderId']);
+        $receiver = User::find($validated['receiverId']);
+
+        $giftCost = (int) ($validated['giftCostTokens'] ?? 0);
+        $giftId = $validated['giftId'] ?? null;
+
+        if ($sender) {
+            if (!empty($giftId) && $giftCost > 0) {
+                // Deduct gift cost in tokens from sender
+                $sender->tokens = max(0, $sender->tokens - $giftCost);
+                $sender->save();
+
+                // Convert gift tokens to credits for receiver (1 token = 1 credit)
+                if ($receiver) {
+                    $receiver->credits += $giftCost;
+                    $receiver->total_credits_earned += $giftCost;
+                    $receiver->exp_points += ($giftCost * 2);
+                    $receiver->save();
+
+                    Transaction::create([
+                        'user_id' => $receiver->id,
+                        'type' => 'gift_payout',
+                        'amount_tokens' => $giftCost,
+                        'amount_credits' => $giftCost,
+                        'amount_usd' => round(($giftCost / 100), 2),
+                        'payment_provider' => 'gift_conversion',
+                        'reference' => 'GIFT_' . strtoupper(bin2hex(random_bytes(4))),
+                        'status' => 'completed',
+                    ]);
+                }
+            } else if (strtolower($sender->gender ?? '') === 'male') {
+                // Regular text message costs 2 tokens for male users
+                $sender->tokens = max(0, $sender->tokens - 2);
+                $sender->save();
+            }
+        }
+
         $chat = ChatMessage::create([
             'sender_id' => $validated['senderId'],
             'receiver_id' => $validated['receiverId'],
-            'message' => $validated['message'] ?? 'Gift sent: ' . ($validated['giftId'] ?? ''),
-            'gift_id' => $validated['giftId'] ?? null,
-            'gift_cost_tokens' => $validated['giftCostTokens'] ?? 0,
+            'message' => $validated['message'] ?? 'Gift sent: ' . ($giftId ?? ''),
+            'gift_id' => $giftId,
+            'gift_cost_tokens' => $giftCost,
             'is_read' => false,
         ]);
 
         return response()->json([
             'status' => 'success',
-            'message' => 'Message logged',
-            'chat' => $chat
+            'message' => 'Message logged successfully',
+            'chat' => $chat,
+            'senderTokens' => $sender ? $sender->tokens : 0,
+            'receiverCredits' => $receiver ? $receiver->credits : 0,
         ]);
     }
 
