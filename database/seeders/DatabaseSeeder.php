@@ -75,11 +75,13 @@ class DatabaseSeeder extends Seeder
             ['key' => 'male_call_rate_level5', 'value' => '20', 'category' => 'call_rates', 'description' => 'Level 5 Male Video Call Cost (Tokens/min)'],
 
             // Chat & Messaging Costs
-            ['key' => 'chat_text_message_cost', 'value' => '2', 'category' => 'chat_rates', 'description' => 'Text Message Cost (Tokens per message)'],
+            ['key' => 'chat_text_message_cost', 'value' => '3', 'category' => 'chat_rates', 'description' => 'Text Message Cost (Tokens per message)'],
             ['key' => 'chat_media_message_cost', 'value' => '5', 'category' => 'chat_rates', 'description' => 'Image / Voice Note Message Cost (Tokens)'],
 
             // Female Creator Payout & Split Rates
             ['key' => 'creator_payout_split_percentage', 'value' => '70', 'category' => 'payouts', 'description' => 'Female Creator Payout Split (% of call revenue)'],
+            ['key' => 'chat_commission_percentage', 'value' => '70', 'category' => 'payouts', 'description' => 'Female Creator Chat Commission Split (% of chat revenue)'],
+            ['key' => 'gift_commission_percentage', 'value' => '70', 'category' => 'payouts', 'description' => 'Female Creator Gift Commission Split (% of gift revenue)'],
             ['key' => 'female_pay_rate_level1', 'value' => '20', 'category' => 'payouts', 'description' => 'Level 1 Female Creator Pay Rate (Credits/min)'],
             ['key' => 'female_pay_rate_level2', 'value' => '25', 'category' => 'payouts', 'description' => 'Level 2 Female Creator Pay Rate (Credits/min)'],
             ['key' => 'female_pay_rate_level3', 'value' => '30', 'category' => 'payouts', 'description' => 'Level 3 Female Creator Pay Rate (Credits/min)'],

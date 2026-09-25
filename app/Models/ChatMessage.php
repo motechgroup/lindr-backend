@@ -15,6 +15,7 @@ class ChatMessage extends Model
         'message_text',
         'gift_id',
         'tokens_spent',
+        'image_url',
     ];
 
     public function sender()
@@ -25,5 +26,15 @@ class ChatMessage extends Model
     public function receiver()
     {
         return $this->belongsTo(User::class, 'receiver_id');
+    }
+
+    public function getMessageAttribute()
+    {
+        return $this->attributes['message_text'] ?? null;
+    }
+
+    public function setMessageAttribute($value)
+    {
+        $this->attributes['message_text'] = $value;
     }
 }

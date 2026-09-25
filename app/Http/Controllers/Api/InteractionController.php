@@ -267,6 +267,7 @@ class InteractionController extends Controller
             'message' => 'nullable|string',
             'giftId' => 'nullable|string',
             'giftCostTokens' => 'nullable|integer',
+            'image' => 'nullable|string', // base64 or url
         ]);
 
         $sender = User::find($validated['senderId']);
@@ -274,51 +275,143 @@ class InteractionController extends Controller
 
         $giftCost = (int) ($validated['giftCostTokens'] ?? 0);
         $giftId = $validated['giftId'] ?? null;
+        $imageUrl = null;
+
+        // Fetch dynamic system rates & commission percentages configured by Admin
+        $textCost = (int) (\App\Models\SystemSetting::where('key', 'chat_text_message_cost')->value('value') ?? 3);
+        $mediaCost = (int) (\App\Models\SystemSetting::where('key', 'chat_media_message_cost')->value('value') ?? 5);
+        $chatCommission = (int) (\App\Models\SystemSetting::where('key', 'chat_commission_percentage')->value('value') ?? \App\Models\SystemSetting::where('key', 'creator_payout_split_percentage')->value('value') ?? 70);
+        $giftCommission = (int) (\App\Models\SystemSetting::where('key', 'gift_commission_percentage')->value('value') ?? 70);
+
+        // Handle Image Attachment with Strict Sanitization (JPEG, JPG, PNG only, max 5MB, binary verification)
+        if (!empty($validated['image'])) {
+            $rawImg = $validated['image'];
+            $extension = 'jpg';
+            $imgData = null;
+
+            if (str_starts_with($rawImg, 'data:image/')) {
+                preg_match('/data:image\/(jpeg|jpg|png);base64,(.*)/i', $rawImg, $matches);
+                if (count($matches) >= 3) {
+                    $ext = strtolower($matches[1]);
+                    if (!in_array($ext, ['jpeg', 'jpg', 'png'])) {
+                        return response()->json(['status' => 'error', 'message' => 'Invalid image format. Only JPEG, JPG and PNG images are permitted.'], 422);
+                    }
+                    $extension = $ext === 'jpeg' ? 'jpg' : $ext;
+                    $imgData = base64_decode($matches[2]);
+                } else {
+                    return response()->json(['status' => 'error', 'message' => 'Invalid image encoding format.'], 422);
+                }
+            } else if (filter_var($rawImg, FILTER_VALIDATE_URL)) {
+                $imageUrl = $rawImg;
+            }
+
+            if ($imgData !== null) {
+                // Strict file size check (5MB max)
+                if (strlen($imgData) > 5 * 1024 * 1024) {
+                    return response()->json(['status' => 'error', 'message' => 'Image size exceeds maximum 5MB limit.'], 422);
+                }
+
+                // Strict binary magic bytes verification using gd image processing
+                $gdImg = @imagecreatefromstring($imgData);
+                if (!$gdImg) {
+                    return response()->json(['status' => 'error', 'message' => 'Uploaded file is corrupted or not a valid image.'], 422);
+                }
+                imagedestroy($gdImg);
+
+                // Save to safe storage directory with sanitized random hash name
+                $fileName = 'chat_img_' . bin2hex(random_bytes(8)) . '.' . $extension;
+                $storageDir = public_path('storage/chat_images');
+                if (!file_exists($storageDir)) {
+                    mkdir($storageDir, 0755, true);
+                }
+                file_put_contents($storageDir . '/' . $fileName, $imgData);
+                $imageUrl = url('storage/chat_images/' . $fileName);
+            }
+        }
+
+        $tokenCost = 0;
 
         if ($sender) {
             if (!empty($giftId) && $giftCost > 0) {
-                // Deduct gift cost in tokens from sender
+                $tokenCost = $giftCost;
+                if ($sender->tokens < $giftCost) {
+                    return response()->json(['status' => 'insufficient_tokens', 'message' => 'Insufficient tokens to send gift.'], 400);
+                }
                 $sender->tokens = max(0, $sender->tokens - $giftCost);
                 $sender->save();
 
-                // Convert gift tokens to credits for receiver (1 token = 1 credit)
+                // Credit payout to receiver based on gift commission %
                 if ($receiver) {
-                    $receiver->credits += $giftCost;
-                    $receiver->total_credits_earned += $giftCost;
-                    $receiver->exp_points += ($giftCost * 2);
+                    $earnedCredits = max(1, (int) round(($giftCost * $giftCommission) / 100));
+                    $receiver->credits += $earnedCredits;
+                    $receiver->total_credits_earned += $earnedCredits;
+                    $receiver->exp_points += ($earnedCredits * 2);
                     $receiver->save();
 
                     Transaction::create([
                         'user_id' => $receiver->id,
                         'type' => 'gift_payout',
                         'amount_tokens' => $giftCost,
-                        'amount_credits' => $giftCost,
-                        'amount_usd' => round(($giftCost / 100), 2),
+                        'amount_credits' => $earnedCredits,
+                        'amount_usd' => round(($earnedCredits / 100), 2),
                         'payment_provider' => 'gift_conversion',
                         'reference' => 'GIFT_' . strtoupper(bin2hex(random_bytes(4))),
                         'status' => 'completed',
                     ]);
                 }
             } else if (strtolower($sender->gender ?? '') === 'male') {
-                // Regular text message costs 2 tokens for male users
-                $sender->tokens = max(0, $sender->tokens - 2);
+                $tokenCost = !empty($imageUrl) ? $mediaCost : $textCost;
+
+                if ($sender->tokens < $tokenCost) {
+                    return response()->json(['status' => 'insufficient_tokens', 'message' => 'Insufficient tokens balance to send message.'], 400);
+                }
+
+                $sender->tokens = max(0, $sender->tokens - $tokenCost);
                 $sender->save();
+
+                // Male-to-Female Chat Token Cost Commission Split (Admin Configurable %)
+                if ($receiver && strtolower($receiver->gender ?? '') === 'female') {
+                    $earnedCredits = max(1, (int) round(($tokenCost * $chatCommission) / 100));
+                    $receiver->credits += $earnedCredits;
+                    $receiver->total_credits_earned += $earnedCredits;
+                    $receiver->exp_points += ($earnedCredits * 2);
+                    $receiver->save();
+
+                    Transaction::create([
+                        'user_id' => $sender->id,
+                        'type' => 'chat_deduction',
+                        'amount_tokens' => -$tokenCost,
+                        'amount_credits' => $earnedCredits,
+                        'amount_usd' => round(($tokenCost / 100), 2),
+                        'payment_provider' => 'chat_billing',
+                        'reference' => 'CHAT_' . strtoupper(bin2hex(random_bytes(4))),
+                        'status' => 'completed',
+                    ]);
+                }
             }
         }
 
         $chat = ChatMessage::create([
             'sender_id' => $validated['senderId'],
             'receiver_id' => $validated['receiverId'],
-            'message' => $validated['message'] ?? 'Gift sent: ' . ($giftId ?? ''),
+            'message_text' => $validated['message'] ?? (!empty($giftId) ? 'Sent a virtual gift 🎁' : (!empty($imageUrl) ? '📷 Sent photo' : '')),
             'gift_id' => $giftId,
-            'gift_cost_tokens' => $giftCost,
-            'is_read' => false,
+            'tokens_spent' => $tokenCost,
+            'image_url' => $imageUrl,
         ]);
 
         return response()->json([
             'status' => 'success',
             'message' => 'Message logged successfully',
-            'chat' => $chat,
+            'chat' => [
+                'id' => (string) $chat->id,
+                'senderId' => (string) $chat->sender_id,
+                'receiverId' => (string) $chat->receiver_id,
+                'text' => $chat->message_text,
+                'giftId' => $chat->gift_id,
+                'imageUrl' => $chat->image_url,
+                'timestamp' => $chat->created_at ? $chat->created_at->format('H:i') : date('H:i'),
+            ],
             'senderTokens' => $sender ? $sender->tokens : 0,
             'receiverCredits' => $receiver ? $receiver->credits : 0,
         ]);
@@ -345,8 +438,10 @@ class InteractionController extends Controller
                     'id' => (string) $m->id,
                     'senderId' => (string) $m->sender_id,
                     'receiverId' => (string) $m->receiver_id,
-                    'text' => $m->message,
+                    'text' => $m->message_text ?? '',
+                    'message' => $m->message_text ?? '',
                     'giftId' => $m->gift_id,
+                    'imageUrl' => $m->image_url ?? null,
                     'timestamp' => $m->created_at ? $m->created_at->format('H:i') : date('H:i'),
                 ];
             });
