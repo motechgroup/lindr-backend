@@ -187,6 +187,7 @@ Route::prefix('api')->group(function () {
     Route::post('/auth/email', [ApiAuth::class, 'emailLogin']);
     
     Route::get('/user/profile', [ApiUser::class, 'profile']);
+    Route::post('/user/update-profile', [ApiUser::class, 'updateProfile']);
     Route::post('/user/onboarding', [ApiUser::class, 'onboarding']);
     Route::get('/users/opposite', [ApiUser::class, 'oppositeGender']);
     Route::post('/user/verification', [ApiUser::class, 'submitVerification']);

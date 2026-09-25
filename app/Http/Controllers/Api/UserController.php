@@ -37,6 +37,63 @@ class UserController extends Controller
         ]);
     }
 
+    public function updateProfile(Request $request)
+    {
+        $userId = $request->header('X-User-Id') ?? $request->input('userId');
+        $email = $request->input('email');
+
+        $user = null;
+        if (!empty($userId)) {
+            $user = User::find($userId);
+        }
+        if (!$user && !empty($email)) {
+            $user = User::where('email', $email)->first();
+        }
+
+        if (!$user) {
+            return response()->json(['status' => 'error', 'message' => 'User not found'], 404);
+        }
+
+        if ($request->has('name') && !empty($request->input('name'))) {
+            $user->name = $request->input('name');
+        }
+        if ($request->has('avatar') && !empty($request->input('avatar'))) {
+            $user->avatar = $request->input('avatar');
+        }
+        if ($request->has('gender') && !empty($request->input('gender'))) {
+            $user->gender = $request->input('gender');
+        }
+        if ($request->has('birthdate') && !empty($request->input('birthdate'))) {
+            $user->birthdate = $request->input('birthdate');
+        }
+
+        $user->save();
+
+        return response()->json([
+            'status' => 'success',
+            'message' => 'Profile updated successfully',
+            'user' => [
+                'id' => (string) $user->id,
+                'name' => $user->name,
+                'email' => $user->email,
+                'gender' => $user->gender,
+                'birthdate' => $user->birthdate,
+                'avatar' => $user->avatar,
+                'countryCode' => $user->country_code ?? 'KE',
+                'countryName' => $user->country_name ?? 'Kenya',
+                'isVerified' => $user->is_verified,
+                'tokens' => $user->tokens,
+                'credits' => $user->credits,
+                'totalTopUpTokens' => $user->total_topup_tokens,
+                'totalCreditsEarned' => $user->total_credits_earned,
+                'expPoints' => $user->exp_points,
+                'level' => $user->level,
+                'isLoggedIn' => true,
+                'hasCompletedOnboarding' => true,
+            ]
+        ]);
+    }
+
     public function onboarding(Request $request)
     {
         $validated = $request->validate([
