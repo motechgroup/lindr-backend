@@ -196,6 +196,10 @@ Route::prefix('api')->group(function () {
     Route::post('/wallet/topup', [ApiWallet::class, 'topup']);
     Route::post('/wallet/cashout', [ApiWallet::class, 'cashout']);
     
+    Route::post('/calls/initiate', [ApiInteraction::class, 'initiateCall']);
+    Route::get('/calls/check-incoming', [ApiInteraction::class, 'checkIncomingCall']);
+    Route::get('/calls/status', [ApiInteraction::class, 'checkCallStatus']);
+    Route::post('/calls/respond', [ApiInteraction::class, 'respondCall']);
     Route::post('/calls/log', [ApiInteraction::class, 'logCall']);
     Route::post('/chats/send', [ApiInteraction::class, 'sendMessage']);
     

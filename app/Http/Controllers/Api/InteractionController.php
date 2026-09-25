@@ -10,6 +10,136 @@ use Illuminate\Http\Request;
 
 class InteractionController extends Controller
 {
+    public function initiateCall(Request $request)
+    {
+        $validated = $request->validate([
+            'callerId' => 'required',
+            'receiverId' => 'required',
+            'channelName' => 'nullable|string',
+        ]);
+
+        $channelName = $validated['channelName'] ?? ('lindr_call_' . $validated['callerId'] . '_' . $validated['receiverId']);
+
+        // Cancel any previous pending calls for this caller
+        CallSession::where('caller_id', $validated['callerId'])
+            ->where('status', 'ringing')
+            ->update(['status' => 'cancelled']);
+
+        $call = CallSession::create([
+            'caller_id' => $validated['callerId'],
+            'receiver_id' => $validated['receiverId'],
+            'channel_name' => $channelName,
+            'status' => 'ringing',
+        ]);
+
+        $caller = User::find($validated['callerId']);
+
+        return response()->json([
+            'status' => 'success',
+            'callId' => $call->id,
+            'channelName' => $channelName,
+            'callStatus' => 'ringing',
+            'caller' => $caller ? [
+                'id' => (string) $caller->id,
+                'name' => $caller->name,
+                'avatar' => $caller->avatar,
+                'country' => $caller->country_name ?? 'Kenya',
+                'flag' => ($caller->country_code ?? 'KE') === 'KE' ? '🇰🇪' : '🌐',
+                'age' => $caller->birthdate ? date_diff(date_create($caller->birthdate), date_create('today'))->y : 22,
+            ] : null,
+        ]);
+    }
+
+    public function checkIncomingCall(Request $request)
+    {
+        $userId = $request->header('X-User-Id') ?? $request->query('userId');
+
+        if (empty($userId)) {
+            return response()->json(['status' => 'success', 'incomingCall' => null]);
+        }
+
+        // Find recent ringing call for this user created in the last 45 seconds
+        $incoming = CallSession::where('receiver_id', $userId)
+            ->where('status', 'ringing')
+            ->where('created_at', '>=', now()->subSeconds(45))
+            ->latest()
+            ->first();
+
+        if (!$incoming) {
+            return response()->json(['status' => 'success', 'incomingCall' => null]);
+        }
+
+        $caller = User::find($incoming->caller_id);
+
+        return response()->json([
+            'status' => 'success',
+            'incomingCall' => [
+                'id' => $incoming->id,
+                'callerId' => (string) $incoming->caller_id,
+                'channelName' => $incoming->channel_name,
+                'status' => $incoming->status,
+                'caller' => $caller ? [
+                    'id' => (string) $caller->id,
+                    'name' => $caller->name,
+                    'gender' => $caller->gender,
+                    'avatar' => $caller->avatar ?? 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=600&q=80',
+                    'location' => $caller->country_name ?? 'Kenya',
+                    'country' => $caller->country_name ?? 'Kenya',
+                    'flag' => ($caller->country_code ?? 'KE') === 'KE' ? '🇰🇪' : '🌐',
+                    'age' => $caller->birthdate ? date_diff(date_create($caller->birthdate), date_create('today'))->y : 22,
+                    'callRatePerMin' => 25,
+                ] : null,
+            ]
+        ]);
+    }
+
+    public function checkCallStatus(Request $request)
+    {
+        $callId = $request->query('callId');
+        if (empty($callId)) {
+            return response()->json(['status' => 'error', 'message' => 'callId required'], 400);
+        }
+
+        $call = CallSession::find($callId);
+        if (!$call) {
+            return response()->json(['status' => 'error', 'message' => 'Call not found'], 404);
+        }
+
+        return response()->json([
+            'status' => 'success',
+            'callStatus' => $call->status,
+            'channelName' => $call->channel_name,
+        ]);
+    }
+
+    public function respondCall(Request $request)
+    {
+        $validated = $request->validate([
+            'callId' => 'required',
+            'action' => 'required|in:accept,decline,cancel',
+        ]);
+
+        $call = CallSession::find($validated['callId']);
+        if (!$call) {
+            return response()->json(['status' => 'error', 'message' => 'Call not found'], 404);
+        }
+
+        $newStatus = match ($validated['action']) {
+            'accept' => 'accepted',
+            'decline' => 'declined',
+            'cancel' => 'cancelled',
+        };
+
+        $call->status = $newStatus;
+        $call->save();
+
+        return response()->json([
+            'status' => 'success',
+            'message' => 'Call updated to ' . $newStatus,
+            'callStatus' => $newStatus,
+        ]);
+    }
+
     public function logCall(Request $request)
     {
         $validated = $request->validate([
@@ -23,6 +153,7 @@ class InteractionController extends Controller
         $call = CallSession::create([
             'caller_id' => $validated['callerId'],
             'receiver_id' => $validated['receiverId'],
+            'channel_name' => 'lindr_call_' . $validated['callerId'] . '_' . $validated['receiverId'],
             'duration_seconds' => $validated['durationSeconds'],
             'tokens_spent' => $validated['tokensSpent'],
             'credits_earned' => $validated['creditsEarned'],
