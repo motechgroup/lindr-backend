@@ -200,6 +200,7 @@ Route::prefix('api')->group(function () {
     Route::get('/calls/check-incoming', [ApiInteraction::class, 'checkIncomingCall']);
     Route::get('/calls/status', [ApiInteraction::class, 'checkCallStatus']);
     Route::post('/calls/respond', [ApiInteraction::class, 'respondCall']);
+    Route::post('/calls/ticker', [ApiInteraction::class, 'deductCallTicker']);
     Route::post('/calls/log', [ApiInteraction::class, 'logCall']);
     Route::post('/chats/send', [ApiInteraction::class, 'sendMessage']);
     Route::get('/chats/history', [ApiInteraction::class, 'getChatHistory']);

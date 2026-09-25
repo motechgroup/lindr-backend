@@ -141,6 +141,54 @@ class InteractionController extends Controller
         ]);
     }
 
+    public function deductCallTicker(Request $request)
+    {
+        $validated = $request->validate([
+            'callerId' => 'required',
+            'receiverId' => 'required',
+            'callRatePerMin' => 'required|integer',
+            'creditPayRatePerMin' => 'required|integer',
+        ]);
+
+        $caller = User::find($validated['callerId']);
+        $receiver = User::find($validated['receiverId']);
+
+        // 10-second ticker cost and payout calculations
+        $costPer10Sec = max(1, (int) ceil($validated['callRatePerMin'] / 6));
+        $payoutPer10Sec = max(1, (int) ceil($validated['creditPayRatePerMin'] / 6));
+
+        if ($caller) {
+            if ($caller->tokens < $costPer10Sec) {
+                return response()->json([
+                    'status' => 'insufficient_tokens',
+                    'message' => 'Caller ran out of tokens',
+                    'shouldEndCall' => true,
+                    'callerTokens' => $caller->tokens,
+                ]);
+            }
+
+            // Deduct tokens from caller
+            $caller->tokens = max(0, $caller->tokens - $costPer10Sec);
+            $caller->save();
+
+            // Payout credits to female receiver
+            if ($receiver) {
+                $receiver->credits += $payoutPer10Sec;
+                $receiver->total_credits_earned += $payoutPer10Sec;
+                $receiver->exp_points += ($payoutPer10Sec * 2);
+                $receiver->save();
+            }
+
+            return response()->json([
+                'status' => 'success',
+                'callerTokens' => $caller->tokens,
+                'receiverCredits' => $receiver ? $receiver->credits : 0,
+            ]);
+        }
+
+        return response()->json(['status' => 'error', 'message' => 'Caller not found'], 404);
+    }
+
     public function logCall(Request $request)
     {
         $validated = $request->validate([
@@ -151,20 +199,41 @@ class InteractionController extends Controller
             'creditsEarned' => 'required|integer',
         ]);
 
+        $caller = User::find($validated['callerId']);
+        $receiver = User::find($validated['receiverId']);
+
+        $tokensSpent = (int) $validated['tokensSpent'];
+        $creditsEarned = (int) $validated['creditsEarned'];
+
         $call = CallSession::create([
             'caller_id' => $validated['callerId'],
             'receiver_id' => $validated['receiverId'],
             'channel_name' => 'lindr_call_' . $validated['callerId'] . '_' . $validated['receiverId'],
             'duration_seconds' => $validated['durationSeconds'],
-            'tokens_spent' => $validated['tokensSpent'],
-            'credits_earned' => $validated['creditsEarned'],
+            'tokens_spent' => $tokensSpent,
+            'credits_earned' => $creditsEarned,
             'status' => 'completed',
         ]);
+
+        if ($tokensSpent > 0 && $caller) {
+            Transaction::create([
+                'user_id' => $caller->id,
+                'type' => 'call_deduction',
+                'amount_tokens' => -$tokensSpent,
+                'amount_credits' => 0,
+                'amount_usd' => round(($tokensSpent / 100), 2),
+                'payment_provider' => 'call_billing',
+                'reference' => 'CALL_' . strtoupper(bin2hex(random_bytes(4))),
+                'status' => 'completed',
+            ]);
+        }
 
         return response()->json([
             'status' => 'success',
             'message' => 'Call session logged',
-            'call' => $call
+            'call' => $call,
+            'callerTokens' => $caller ? $caller->tokens : 0,
+            'receiverCredits' => $receiver ? $receiver->credits : 0,
         ]);
     }
 
