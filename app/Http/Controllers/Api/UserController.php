@@ -150,6 +150,10 @@ class UserController extends Controller
                     'isVerified' => (bool) $u->is_verified,
                     'level' => $u->level ?? 1,
                     'bio' => 'Ready to connect and video call on Lindr ✨',
+                    'followingCount' => 0,
+                    'fansCount' => 0,
+                    'friendsCount' => 0,
+                    'photos' => [],
                 ];
             });
 
