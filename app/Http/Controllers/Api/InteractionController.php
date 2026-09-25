@@ -117,7 +117,7 @@ class InteractionController extends Controller
     {
         $validated = $request->validate([
             'callId' => 'required',
-            'action' => 'required|in:accept,decline,cancel',
+            'action' => 'required|in:accept,decline,cancel,end',
         ]);
 
         $call = CallSession::find($validated['callId']);
@@ -129,6 +129,7 @@ class InteractionController extends Controller
             'accept' => 'accepted',
             'decline' => 'declined',
             'cancel' => 'cancelled',
+            'end' => 'ended',
         };
 
         $call->status = $newStatus;
@@ -197,6 +198,7 @@ class InteractionController extends Controller
             'durationSeconds' => 'required|integer',
             'tokensSpent' => 'required|integer',
             'creditsEarned' => 'required|integer',
+            'callId' => 'nullable',
         ]);
 
         $caller = User::find($validated['callerId']);
@@ -205,15 +207,35 @@ class InteractionController extends Controller
         $tokensSpent = (int) $validated['tokensSpent'];
         $creditsEarned = (int) $validated['creditsEarned'];
 
-        $call = CallSession::create([
-            'caller_id' => $validated['callerId'],
-            'receiver_id' => $validated['receiverId'],
-            'channel_name' => 'lindr_call_' . $validated['callerId'] . '_' . $validated['receiverId'],
-            'duration_seconds' => $validated['durationSeconds'],
-            'tokens_spent' => $tokensSpent,
-            'credits_earned' => $creditsEarned,
-            'status' => 'completed',
-        ]);
+        $call = null;
+        if (!empty($validated['callId'])) {
+            $call = CallSession::find($validated['callId']);
+        }
+        if (!$call) {
+            $call = CallSession::where('caller_id', $validated['callerId'])
+                ->where('receiver_id', $validated['receiverId'])
+                ->latest()
+                ->first();
+        }
+
+        if ($call) {
+            $call->update([
+                'duration_seconds' => $validated['durationSeconds'],
+                'tokens_spent' => $tokensSpent,
+                'credits_earned' => $creditsEarned,
+                'status' => 'ended',
+            ]);
+        } else {
+            $call = CallSession::create([
+                'caller_id' => $validated['callerId'],
+                'receiver_id' => $validated['receiverId'],
+                'channel_name' => 'lindr_call_' . $validated['callerId'] . '_' . $validated['receiverId'],
+                'duration_seconds' => $validated['durationSeconds'],
+                'tokens_spent' => $tokensSpent,
+                'credits_earned' => $creditsEarned,
+                'status' => 'ended',
+            ]);
+        }
 
         if ($tokensSpent > 0 && $caller) {
             Transaction::create([
