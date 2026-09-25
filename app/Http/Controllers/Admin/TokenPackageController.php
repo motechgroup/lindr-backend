@@ -4,14 +4,31 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\TokenPackage;
+use App\Models\User;
 use Illuminate\Http\Request;
 
 class TokenPackageController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
         $packages = TokenPackage::orderBy('tokens', 'asc')->get();
-        return view('admin.tokens.index', compact('packages'));
+
+        // Query users for direct Token Balance Management
+        $userQuery = User::where('is_admin', false);
+        if ($request->filled('user_search')) {
+            $search = trim($request->user_search);
+            $userQuery->where(function($q) use ($search) {
+                $q->where('name', 'like', "%{$search}%")
+                  ->orWhere('email', 'like', "%{$search}%")
+                  ->orWhere('id', $search);
+            });
+        }
+
+        $users = $userQuery->orderBy('created_at', 'desc')->paginate(10, ['*'], 'user_page');
+        $totalTokensInCirculation = User::sum('tokens');
+        $totalTokensPurchased = User::sum('total_topup_tokens');
+
+        return view('admin.tokens.index', compact('packages', 'users', 'totalTokensInCirculation', 'totalTokensPurchased'));
     }
 
     public function store(Request $request)
@@ -54,7 +71,7 @@ class TokenPackageController extends Controller
             'is_popular' => $request->boolean('is_popular'),
         ]);
 
-        return back()->with('success', "Token package {$pkg->name} updated.");
+        return back()->with('success', "Token package {$pkg->name} updated successfully.");
     }
 
     public function toggle($id)
