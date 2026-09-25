@@ -120,17 +120,11 @@ class UserController extends Controller
         $gender = strtolower($request->query('gender', 'male'));
         $currentUserId = $request->header('X-User-Id') ?? $request->query('userId');
 
-        $targetGender = $gender === 'male' ? 'female' : ($gender === 'female' ? 'male' : null);
+        // Target gender is strictly female if male, and male if female
+        $targetGender = $gender === 'female' ? 'male' : 'female';
 
-        $query = User::where('is_admin', false);
-
-        if (!empty($targetGender)) {
-            $query->where(function($q) use ($targetGender) {
-                $q->where('gender', $targetGender)
-                  ->orWhere('gender', 'pending')
-                  ->orWhereNull('gender');
-            });
-        }
+        $query = User::where('is_admin', false)
+            ->where('gender', $targetGender);
 
         if (!empty($currentUserId)) {
             $query->where('id', '!=', $currentUserId);
