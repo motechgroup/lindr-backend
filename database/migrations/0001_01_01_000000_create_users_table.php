@@ -21,7 +21,7 @@ return new class extends Migration
                 $table->string('password')->nullable();
                 $table->string('gender')->default('male');
                 $table->date('birthdate')->nullable();
-                $table->text('avatar')->nullable();
+                $table->longText('avatar')->nullable();
                 $table->string('country_code')->default('KE');
                 $table->string('country_name')->default('Kenya');
                 $table->integer('tokens')->default(0);
