@@ -64,8 +64,8 @@
                     @foreach($pendingWithdrawals as $w)
                         <tr class="hover:bg-white/[0.02] transition">
                             <td class="p-4 font-bold text-white flex items-center gap-3">
-                                <img src="{{ $w->user->avatar }}" class="w-8 h-8 rounded-full object-cover">
-                                {{ $w->user->name }}
+                                <img src="{{ $w->user?->avatar ?? 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=600&q=80' }}" class="w-8 h-8 rounded-full object-cover">
+                                {{ $w->user?->name ?? ('User #' . $w->user_id) }}
                             </td>
                             <td class="p-4 font-semibold text-yellow-400">{{ number_format($w->credits_amount) }} Credits</td>
                             <td class="p-4 font-bold text-emerald-400">${{ number_format($w->amount_usd, 2) }}</td>

@@ -34,14 +34,14 @@
                 @foreach($withdrawals as $w)
                     <tr class="hover:bg-white/[0.02] transition">
                         <td class="p-4 font-bold text-white flex items-center gap-3">
-                            <img src="{{ $w->user->avatar ?? '' }}" class="w-8 h-8 rounded-full object-cover">
+                            <img src="{{ $w->user?->avatar ?? 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=600&q=80' }}" class="w-8 h-8 rounded-full object-cover">
                             <div>
-                                <div>{{ $w->user->name ?? 'User' }}</div>
+                                <div>{{ $w->user?->name ?? ('User #' . $w->user_id) }}</div>
                                 <div class="text-[10px] text-gray-400 font-medium">
-                                    @if(($w->user->country_code ?? 'KE') === 'KE')
+                                    @if(($w->user?->country_code ?? 'KE') === 'KE')
                                         <span class="text-green-400 font-bold">🇰🇪 Kenya</span>
                                     @else
-                                        <span class="text-blue-400 font-bold">🌐 {{ $w->user->country_name ?? 'International' }}</span>
+                                        <span class="text-blue-400 font-bold">🌐 {{ $w->user?->country_name ?? 'International' }}</span>
                                     @endif
                                 </div>
                             </div>
