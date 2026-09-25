@@ -192,4 +192,37 @@ class InteractionController extends Controller
             'chat' => $chat
         ]);
     }
+
+    public function getChatHistory(Request $request)
+    {
+        $userId = $request->header('X-User-Id') ?? $request->query('userId');
+        $partnerId = $request->query('partnerId');
+
+        if (empty($userId) || empty($partnerId)) {
+            return response()->json(['status' => 'error', 'message' => 'userId and partnerId required'], 400);
+        }
+
+        $messages = ChatMessage::where(function($q) use ($userId, $partnerId) {
+                $q->where('sender_id', $userId)->where('receiver_id', $partnerId);
+            })->orWhere(function($q) use ($userId, $partnerId) {
+                $q->where('sender_id', $partnerId)->where('receiver_id', $userId);
+            })
+            ->orderBy('created_at', 'asc')
+            ->get()
+            ->map(function($m) {
+                return [
+                    'id' => (string) $m->id,
+                    'senderId' => (string) $m->sender_id,
+                    'receiverId' => (string) $m->receiver_id,
+                    'text' => $m->message,
+                    'giftId' => $m->gift_id,
+                    'timestamp' => $m->created_at ? $m->created_at->format('H:i') : date('H:i'),
+                ];
+            });
+
+        return response()->json([
+            'status' => 'success',
+            'messages' => $messages
+        ]);
+    }
 }

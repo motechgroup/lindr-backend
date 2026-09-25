@@ -10,8 +10,23 @@ class UserController extends Controller
 {
     public function profile(Request $request)
     {
-        $userId = $request->header('X-User-Id');
-        $user = User::find($userId) ?? User::first();
+        $userId = $request->header('X-User-Id') ?? $request->query('userId');
+        $email = $request->query('email');
+
+        $user = null;
+        if (!empty($userId)) {
+            $user = User::find($userId);
+        }
+        if (!$user && !empty($email)) {
+            $user = User::where('email', $email)->first();
+        }
+        if (!$user) {
+            $user = User::first();
+        }
+
+        if (!$user) {
+            return response()->json(['status' => 'error', 'message' => 'User not found'], 404);
+        }
 
         return response()->json([
             'status' => 'success',
@@ -24,13 +39,13 @@ class UserController extends Controller
                 'avatar' => $user->avatar,
                 'countryCode' => $user->country_code ?? 'KE',
                 'countryName' => $user->country_name ?? 'Kenya',
-                'isVerified' => $user->is_verified,
-                'tokens' => $user->tokens,
-                'credits' => $user->credits,
-                'totalTopUpTokens' => $user->total_topup_tokens,
-                'totalCreditsEarned' => $user->total_credits_earned,
-                'expPoints' => $user->exp_points,
-                'level' => $user->level,
+                'isVerified' => (bool) $user->is_verified,
+                'tokens' => (int) $user->tokens,
+                'credits' => (int) $user->credits,
+                'totalTopUpTokens' => (int) $user->total_topup_tokens,
+                'totalCreditsEarned' => (int) $user->total_credits_earned,
+                'expPoints' => (int) $user->exp_points,
+                'level' => (int) ($user->level ?? 1),
                 'isLoggedIn' => true,
                 'hasCompletedOnboarding' => true,
             ]

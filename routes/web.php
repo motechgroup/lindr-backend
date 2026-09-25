@@ -202,6 +202,7 @@ Route::prefix('api')->group(function () {
     Route::post('/calls/respond', [ApiInteraction::class, 'respondCall']);
     Route::post('/calls/log', [ApiInteraction::class, 'logCall']);
     Route::post('/chats/send', [ApiInteraction::class, 'sendMessage']);
+    Route::get('/chats/history', [ApiInteraction::class, 'getChatHistory']);
     
     Route::get('/tokens/packages', function () {
         return response()->json([
