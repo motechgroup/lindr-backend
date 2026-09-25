@@ -117,22 +117,44 @@ class UserController extends Controller
 
     public function oppositeGender(Request $request)
     {
-        $gender = $request->query('gender', 'male');
-        $targetGender = $gender === 'male' ? 'female' : 'male';
+        $gender = strtolower($request->query('gender', 'male'));
+        $currentUserId = $request->header('X-User-Id') ?? $request->query('userId');
 
-        $users = User::where('gender', $targetGender)
-            ->where('is_admin', false)
-            ->get()
+        $targetGender = $gender === 'male' ? 'female' : ($gender === 'female' ? 'male' : null);
+
+        $query = User::where('is_admin', false);
+
+        if (!empty($targetGender)) {
+            $query->where(function($q) use ($targetGender) {
+                $q->where('gender', $targetGender)
+                  ->orWhere('gender', 'pending')
+                  ->orWhereNull('gender');
+            });
+        }
+
+        if (!empty($currentUserId)) {
+            $query->where('id', '!=', $currentUserId);
+        }
+
+        $users = $query->latest()->get()
             ->map(function($u) {
+                $country = $u->country_name ?? 'Kenya';
+                $countryCode = $u->country_code ?? 'KE';
+                $flag = ($countryCode === 'KE' || strtolower($country) === 'kenya') ? '🇰🇪' : '🌐';
+
                 return [
                     'id' => (string) $u->id,
                     'name' => $u->name,
                     'gender' => $u->gender,
                     'age' => $u->birthdate ? date_diff(date_create($u->birthdate), date_create('today'))->y : 22,
-                    'avatar' => $u->avatar,
+                    'avatar' => $u->avatar ?? 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=600&q=80',
+                    'country' => $country,
+                    'countryCode' => $countryCode,
+                    'flag' => $flag,
                     'isOnline' => true,
-                    'isVerified' => $u->is_verified,
-                    'level' => $u->level,
+                    'status' => 'online',
+                    'isVerified' => (bool) $u->is_verified,
+                    'level' => $u->level ?? 1,
                     'bio' => 'Ready to connect and video call on Lindr ✨',
                 ];
             });
