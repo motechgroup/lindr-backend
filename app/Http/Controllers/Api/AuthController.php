@@ -46,11 +46,14 @@ class AuthController extends Controller
                     'gender' => 'pending',
                     'birthdate' => null,
                     'is_verified' => false,
+                    'last_heartbeat_at' => now(),
                 ]);
             } else {
                 if (!empty($validated['avatar'])) $user->avatar = $validated['avatar'];
                 if (!empty($validated['name']) && (empty($user->name) || $user->name === 'Google User')) $user->name = $validated['name'];
                 if (!empty($googleId)) $user->google_id = $googleId;
+                $user->last_heartbeat_at = now();
+                $user->touch();
                 $user->save();
             }
 
@@ -114,6 +117,7 @@ class AuthController extends Controller
                     'gender' => 'pending',
                     'birthdate' => null,
                     'is_verified' => false,
+                    'last_heartbeat_at' => now(),
                 ]);
             } else {
                 if (!empty($validated['name']) && empty($user->name)) {
@@ -122,6 +126,8 @@ class AuthController extends Controller
                 if (!empty($validated['password']) && empty($user->password)) {
                     $user->password = \Illuminate\Support\Facades\Hash::make($validated['password']);
                 }
+                $user->last_heartbeat_at = now();
+                $user->touch();
                 $user->save();
             }
 

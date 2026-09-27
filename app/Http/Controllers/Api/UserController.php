@@ -25,7 +25,9 @@ class UserController extends Controller
             return response()->json(['status' => 'error', 'message' => 'User not found'], 404);
         }
 
+        $user->last_heartbeat_at = now();
         $user->touch();
+        $user->save();
 
         return response()->json([
             'status' => 'success',
@@ -81,6 +83,8 @@ class UserController extends Controller
             $user->birthdate = $request->input('birthdate');
         }
 
+        $user->last_heartbeat_at = now();
+        $user->touch();
         $user->save();
 
         return response()->json([
@@ -142,6 +146,7 @@ class UserController extends Controller
                 'tokens' => 0,
                 'credits' => 0,
                 'is_verified' => false,
+                'last_heartbeat_at' => now(),
             ]);
         } else {
             $user->gender = $validated['gender'];
@@ -160,6 +165,8 @@ class UserController extends Controller
                 $user->country_code = $validated['countryCode'];
                 $user->country_name = $validated['countryName'] ?? ($validated['countryCode'] === 'KE' ? 'Kenya' : 'International');
             }
+            $user->last_heartbeat_at = now();
+            $user->touch();
             $user->save();
         }
 
@@ -214,14 +221,17 @@ class UserController extends Controller
                 $currentUser->last_heartbeat_at = now();
                 $currentUser->touch();
                 $currentUser->save();
+                if (!empty($currentUser->gender) && in_array(strtolower($currentUser->gender), ['male', 'female'])) {
+                    $gender = strtolower($currentUser->gender);
+                }
             }
         }
 
-        // Target gender is strictly female if male, and male if female
+        // Target gender is strictly female if current user is male, and male if female
         $targetGender = $gender === 'female' ? 'male' : 'female';
 
-        // Strict online threshold: User MUST have sent an active app heartbeat in the last 45 seconds
-        $onlineCutoff = now()->subSeconds(45);
+        // Strict online threshold: User MUST have sent an active app heartbeat within the last 120 seconds (2 minutes)
+        $onlineCutoff = now()->subSeconds(120);
 
         $query = User::where('is_admin', false)
             ->where('gender', $targetGender)
