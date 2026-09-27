@@ -34,14 +34,10 @@ Route::get('/', [LandingController::class, 'index'])->name('landing');
 Route::any('/fix-db-schema', function() {
     $res = [];
     try {
-        if (!\Illuminate\Support\Facades\Schema::hasColumn('users', 'last_heartbeat_at')) {
-            \Illuminate\Support\Facades\DB::statement("ALTER TABLE users ADD COLUMN last_heartbeat_at DATETIME NULL;");
-            $res[] = "Added last_heartbeat_at column to users table successfully.";
-        } else {
-            $res[] = "last_heartbeat_at column already exists.";
-        }
+        \Illuminate\Support\Facades\DB::statement("ALTER TABLE users ADD COLUMN last_heartbeat_at DATETIME NULL;");
+        $res[] = "Added last_heartbeat_at column to users table successfully.";
     } catch (\Throwable $e) {
-        $res[] = "ALTER TABLE error: " . $e->getMessage();
+        $res[] = "ALTER TABLE note: " . $e->getMessage();
     }
     try {
         \Illuminate\Support\Facades\Artisan::call('migrate', ['--force' => true]);

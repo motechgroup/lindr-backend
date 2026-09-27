@@ -18,9 +18,7 @@ class DatabaseSeeder extends Seeder
     public function run(): void
     {
         try {
-            if (!\Illuminate\Support\Facades\Schema::hasColumn('users', 'last_heartbeat_at')) {
-                \Illuminate\Support\Facades\DB::statement("ALTER TABLE users ADD COLUMN last_heartbeat_at DATETIME NULL;");
-            }
+            \Illuminate\Support\Facades\DB::statement("ALTER TABLE users ADD COLUMN last_heartbeat_at DATETIME NULL;");
         } catch (\Throwable $e) {}
 
         // 1. Admin User
