@@ -8,15 +8,19 @@ return new class extends Migration
 {
     public function up(): void
     {
-        Schema::table('users', function (Blueprint $table) {
-            $table->timestamp('last_heartbeat_at')->nullable()->after('updated_at');
-        });
+        if (Schema::hasTable('users') && !Schema::hasColumn('users', 'last_heartbeat_at')) {
+            Schema::table('users', function (Blueprint $table) {
+                $table->timestamp('last_heartbeat_at')->nullable();
+            });
+        }
     }
 
     public function down(): void
     {
-        Schema::table('users', function (Blueprint $table) {
-            $table->dropColumn('last_heartbeat_at');
-        });
+        if (Schema::hasTable('users') && Schema::hasColumn('users', 'last_heartbeat_at')) {
+            Schema::table('users', function (Blueprint $table) {
+                $table->dropColumn('last_heartbeat_at');
+            });
+        }
     }
 };

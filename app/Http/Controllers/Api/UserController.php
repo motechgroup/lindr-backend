@@ -8,6 +8,18 @@ use Illuminate\Http\Request;
 
 class UserController extends Controller
 {
+    private function touchHeartbeat($user)
+    {
+        if (!$user) return;
+        try {
+            if (\Illuminate\Support\Facades\Schema::hasColumn('users', 'last_heartbeat_at')) {
+                $user->last_heartbeat_at = now();
+            }
+            $user->touch();
+            $user->save();
+        } catch (\Throwable $e) {}
+    }
+
     public function profile(Request $request)
     {
         $userId = $request->header('X-User-Id') ?? $request->query('userId');
@@ -25,9 +37,7 @@ class UserController extends Controller
             return response()->json(['status' => 'error', 'message' => 'User not found'], 404);
         }
 
-        $user->last_heartbeat_at = now();
-        $user->touch();
-        $user->save();
+        $this->touchHeartbeat($user);
 
         return response()->json([
             'status' => 'success',
@@ -83,9 +93,7 @@ class UserController extends Controller
             $user->birthdate = $request->input('birthdate');
         }
 
-        $user->last_heartbeat_at = now();
-        $user->touch();
-        $user->save();
+        $this->touchHeartbeat($user);
 
         return response()->json([
             'status' => 'success',
@@ -146,7 +154,6 @@ class UserController extends Controller
                 'tokens' => 0,
                 'credits' => 0,
                 'is_verified' => false,
-                'last_heartbeat_at' => now(),
             ]);
         } else {
             $user->gender = $validated['gender'];
@@ -165,10 +172,9 @@ class UserController extends Controller
                 $user->country_code = $validated['countryCode'];
                 $user->country_name = $validated['countryName'] ?? ($validated['countryCode'] === 'KE' ? 'Kenya' : 'International');
             }
-            $user->last_heartbeat_at = now();
-            $user->touch();
-            $user->save();
         }
+
+        $this->touchHeartbeat($user);
 
         return response()->json([
             'status' => 'success',
@@ -201,9 +207,7 @@ class UserController extends Controller
         if (!empty($userId)) {
             $user = User::find($userId);
             if ($user) {
-                $user->last_heartbeat_at = now();
-                $user->touch();
-                $user->save();
+                $this->touchHeartbeat($user);
                 return response()->json(['status' => 'success', 'timestamp' => now()->timestamp]);
             }
         }
@@ -218,9 +222,7 @@ class UserController extends Controller
         if (!empty($currentUserId)) {
             $currentUser = User::find($currentUserId);
             if ($currentUser) {
-                $currentUser->last_heartbeat_at = now();
-                $currentUser->touch();
-                $currentUser->save();
+                $this->touchHeartbeat($currentUser);
                 if (!empty($currentUser->gender) && in_array(strtolower($currentUser->gender), ['male', 'female'])) {
                     $gender = strtolower($currentUser->gender);
                 }
@@ -234,8 +236,11 @@ class UserController extends Controller
         $onlineCutoff = now()->subSeconds(120);
 
         $query = User::where('is_admin', false)
-            ->where('gender', $targetGender)
-            ->where('last_heartbeat_at', '>=', $onlineCutoff);
+            ->where('gender', $targetGender);
+
+        if (\Illuminate\Support\Facades\Schema::hasColumn('users', 'last_heartbeat_at')) {
+            $query->where('last_heartbeat_at', '>=', $onlineCutoff);
+        }
 
         if (!empty($currentUserId)) {
             $query->where('id', '!=', $currentUserId);
