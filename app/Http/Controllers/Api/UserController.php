@@ -282,9 +282,7 @@ class UserController extends Controller
                     'photos' => [],
                 ];
             })
-            ->filter(function($u) {
-                return $u['isOnline'] === true;
-            })
+            ->sortByDesc('isOnline')
             ->values();
 
         return response()->json([
@@ -335,7 +333,7 @@ class UserController extends Controller
         $countriesList = [
             [
                 'code' => 'ALL',
-                'name' => 'Global (All Countries)',
+                'name' => 'All',
                 'flag' => '🌐',
                 'userCount' => User::where('is_admin', false)->count(),
                 'tokenFee' => 0,
