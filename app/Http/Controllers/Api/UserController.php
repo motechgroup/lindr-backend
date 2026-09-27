@@ -250,8 +250,9 @@ class UserController extends Controller
                 $country = $u->country_name ?? 'Kenya';
                 $countryCode = $u->country_code ?? 'KE';
                 $flag = ($countryCode === 'KE' || strtolower($country) === 'kenya') ? '🇰🇪' : '🌐';
-                $lastHb = $u->last_heartbeat_at ? \Carbon\Carbon::parse($u->last_heartbeat_at) : null;
-                $isOnline = $lastHb && $lastHb->gte($onlineCutoff);
+                $hbTime = $u->last_heartbeat_at ?? $u->updated_at;
+                $lastHb = $hbTime ? \Carbon\Carbon::parse($hbTime) : null;
+                $isOnline = $lastHb ? $lastHb->gte($onlineCutoff) : false;
 
                 return [
                     'id' => (string) $u->id,
@@ -280,12 +281,6 @@ class UserController extends Controller
 
         return response()->json([
             'status' => 'success',
-            'debug' => [
-                'targetGender' => $targetGender,
-                'genderParam' => $gender,
-                'currentUserGender' => $currentUser->gender ?? null,
-                'allUsers' => User::select('id', 'name', 'gender', 'last_heartbeat_at', 'updated_at', 'is_admin')->get(),
-            ],
             'users' => $users
         ]);
     }
