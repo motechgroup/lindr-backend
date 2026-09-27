@@ -197,7 +197,7 @@ Route::prefix('api')->group(function () {
     Route::post('/wallet/topup', [ApiWallet::class, 'topup']);
     Route::post('/wallet/cashout', [ApiWallet::class, 'cashout']);
     
-    Route::post('/system/sync-updates', function () {
+    Route::any('/system/sync-updates', function () {
         $workDir = base_path();
         $branchRes = shell_exec("cd " . escapeshellarg($workDir) . " && git pull origin main 2>&1");
         
