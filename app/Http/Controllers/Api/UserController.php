@@ -234,11 +234,11 @@ class UserController extends Controller
         // Target gender is strictly female if current user is male, and male if female
         $targetGender = $gender === 'female' ? 'male' : 'female';
 
-        // Strict online threshold: User MUST have sent an active app heartbeat within the last 120 seconds (2 minutes)
-        $onlineCutoff = now()->subSeconds(120);
+        // Strict online threshold: User MUST have sent an active app heartbeat within the last 300 seconds (5 minutes)
+        $onlineCutoff = now()->subSeconds(300);
 
         $query = User::where('is_admin', false)
-            ->where('gender', $targetGender);
+            ->whereRaw('LOWER(gender) = ?', [strtolower($targetGender)]);
 
         if (!empty($currentUserId)) {
             $query->where('id', '!=', $currentUserId);
