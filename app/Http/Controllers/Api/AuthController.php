@@ -23,6 +23,66 @@ class AuthController extends Controller
         } catch (\Throwable $e) {}
     }
 
+    private function getCountryNameFromCode($code)
+    {
+        $c = strtoupper(trim($code ?? ''));
+        $map = [
+            'KE' => 'Kenya',
+            'US' => 'United States',
+            'GB' => 'United Kingdom',
+            'NG' => 'Nigeria',
+            'ZA' => 'South Africa',
+            'TZ' => 'Tanzania',
+            'UG' => 'Uganda',
+            'IN' => 'India',
+            'CA' => 'Canada',
+            'AU' => 'Australia',
+            'BR' => 'Brazil',
+            'ES' => 'Spain',
+            'KR' => 'South Korea',
+            'DE' => 'Germany',
+            'FR' => 'France',
+        ];
+        return $map[$c] ?? ($c === 'KE' ? 'Kenya' : 'International');
+    }
+
+    private function detectCountryFromRequest(Request $request)
+    {
+        $code = strtoupper(trim($request->input('countryCode', '')));
+        $name = trim($request->input('countryName', ''));
+
+        if (!empty($code) && strlen($code) === 2 && $code !== 'KE' && !empty($name) && $name !== 'Kenya') {
+            return ['code' => $code, 'name' => $name];
+        }
+
+        $cfCountry = strtoupper(trim($request->header('CF-IPCOUNTRY') ?: $request->server('HTTP_CF_IPCOUNTRY') ?: ''));
+        if (!empty($cfCountry) && strlen($cfCountry) === 2 && $cfCountry !== 'XX') {
+            return ['code' => $cfCountry, 'name' => $this->getCountryNameFromCode($cfCountry)];
+        }
+
+        $ip = $request->ip();
+        if ($ip && $ip !== '127.0.0.1' && $ip !== '::1') {
+            try {
+                $ctx = stream_context_create(['http' => ['timeout' => 1.5]]);
+                $json = @file_get_contents("http://ip-api.com/json/{$ip}?fields=status,country,countryCode", false, $ctx);
+                if (!empty($json)) {
+                    $data = json_decode($json, true);
+                    if (($data['status'] ?? '') === 'success' && !empty($data['countryCode'])) {
+                        return [
+                            'code' => strtoupper($data['countryCode']),
+                            'name' => $data['country'] ?? $this->getCountryNameFromCode($data['countryCode'])
+                        ];
+                    }
+                }
+            } catch (\Throwable $e) {}
+        }
+
+        return [
+            'code' => !empty($code) ? $code : 'KE',
+            'name' => !empty($name) ? $name : 'Kenya'
+        ];
+    }
+
     public function googleLogin(Request $request)
     {
         try {
@@ -45,16 +105,15 @@ class AuthController extends Controller
                 ->first();
 
             if (!$user) {
-                $countryCode = $request->input('countryCode', 'KE');
-                $countryName = $request->input('countryName', $countryCode === 'KE' ? 'Kenya' : 'International');
+                $cData = $this->detectCountryFromRequest($request);
 
                 $user = User::create([
                     'name' => !empty($validated['name']) ? $validated['name'] : 'Google User',
                     'email' => $email,
                     'google_id' => $googleId,
                     'avatar' => !empty($validated['avatar']) ? $validated['avatar'] : 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=600&q=80',
-                    'country_code' => $countryCode,
-                    'country_name' => $countryName,
+                    'country_code' => $cData['code'],
+                    'country_name' => $cData['name'],
                     'tokens' => 50,
                     'credits' => 0,
                     'gender' => 'pending',
@@ -65,6 +124,11 @@ class AuthController extends Controller
                 if (!empty($validated['avatar'])) $user->avatar = $validated['avatar'];
                 if (!empty($validated['name']) && (empty($user->name) || $user->name === 'Google User')) $user->name = $validated['name'];
                 if (!empty($googleId)) $user->google_id = $googleId;
+                if (empty($user->country_code)) {
+                    $cData = $this->detectCountryFromRequest($request);
+                    $user->country_code = $cData['code'];
+                    $user->country_name = $cData['name'];
+                }
                 $user->save();
             }
 
@@ -113,8 +177,7 @@ class AuthController extends Controller
             ]);
 
             $email = strtolower(trim($validated['email']));
-            $countryCode = $request->input('countryCode', 'KE');
-            $countryName = $request->input('countryName', $countryCode === 'KE' ? 'Kenya' : 'International');
+            $cData = $this->detectCountryFromRequest($request);
 
             $user = User::where('email', $email)->first();
 
@@ -123,8 +186,8 @@ class AuthController extends Controller
                     'email' => $email,
                     'name' => !empty($validated['name']) ? $validated['name'] : explode('@', $email)[0],
                     'password' => !empty($validated['password']) ? \Illuminate\Support\Facades\Hash::make($validated['password']) : null,
-                    'country_code' => $countryCode,
-                    'country_name' => $countryName,
+                    'country_code' => $cData['code'],
+                    'country_name' => $cData['name'],
                     'tokens' => 0,
                     'credits' => 0,
                     'gender' => 'pending',
@@ -137,6 +200,10 @@ class AuthController extends Controller
                 }
                 if (!empty($validated['password']) && empty($user->password)) {
                     $user->password = \Illuminate\Support\Facades\Hash::make($validated['password']);
+                }
+                if (empty($user->country_code)) {
+                    $user->country_code = $cData['code'];
+                    $user->country_name = $cData['name'];
                 }
                 $user->save();
             }

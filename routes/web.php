@@ -49,6 +49,12 @@ Route::any('/fix-db-schema', function() {
     } catch (\Throwable $e) {
         $res[] = "Migration error: " . $e->getMessage();
     }
+    try {
+        \Illuminate\Support\Facades\Artisan::call('db:seed', ['--force' => true]);
+        $res[] = "Seeder log: " . \Illuminate\Support\Facades\Artisan::output();
+    } catch (\Throwable $e) {
+        $res[] = "Seeder error: " . $e->getMessage();
+    }
     return response()->json(['status' => 'success', 'details' => $res]);
 });
 Route::get('/privacy-policy', [LegalController::class, 'privacy'])->name('privacy');
