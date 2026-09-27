@@ -260,7 +260,8 @@ class UserController extends Controller
                 $flag = $this->getCountryFlag($countryCode, $country);
                 $hbTime = $u->last_heartbeat_at ?? $u->updated_at;
                 $lastHb = $hbTime ? \Carbon\Carbon::parse($hbTime) : null;
-                $isOnline = $lastHb ? $lastHb->gte($onlineCutoff) : false;
+                $isMock = (bool)($u->is_mock ?? false) || str_contains(strtolower($u->email ?? ''), '@gmail.com');
+                $isOnline = $isMock ? true : ($lastHb ? $lastHb->gte($onlineCutoff) : false);
 
                 return [
                     'id' => (string) $u->id,
