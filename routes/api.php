@@ -31,8 +31,62 @@ Route::post('/wallet/cashout', [ApiWallet::class, 'cashout']);
 
 Route::any('/system/sync-updates', function () {
     $workDir = base_path();
-    $branchRes = shell_exec("cd " . escapeshellarg($workDir) . " && git pull origin main 2>&1");
-    
+    $disabled = array_map('trim', explode(',', ini_get('disable_functions') ?: ''));
+    $gitOutput = '';
+
+    if (function_exists('shell_exec') && !in_array('shell_exec', $disabled)) {
+        $gitOutput = @shell_exec("cd " . escapeshellarg($workDir) . " && git pull origin main 2>&1");
+    }
+
+    if (empty($gitOutput) || str_contains($gitOutput, 'not found') || str_contains($gitOutput, 'fatal')) {
+        // Zip Archive sync fallback
+        $zipUrl = "https://github.com/motechgroup/lindr-backend/archive/refs/heads/main.zip";
+        $tempZipPath = storage_path("app/latest_repo.zip");
+        $zipData = null;
+        if (function_exists('curl_init')) {
+            $ch = curl_init($zipUrl);
+            curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+            curl_setopt($ch, CURLOPT_FOLLOWLOCATION, true);
+            curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
+            curl_setopt($ch, CURLOPT_USERAGENT, 'Lindr-App-Updater/1.0');
+            $zipData = curl_exec($ch);
+            curl_close($ch);
+        }
+        if (empty($zipData)) {
+            $opts = ['http' => ['header' => "User-Agent: Lindr-App-Updater/1.0\r\n"], 'ssl' => ['verify_peer' => false, 'verify_peer_name' => false]];
+            $zipData = @file_get_contents($zipUrl, false, stream_context_create($opts));
+        }
+
+        if (!empty($zipData) && class_exists('ZipArchive')) {
+            \Illuminate\Support\Facades\File::put($tempZipPath, $zipData);
+            $zip = new \ZipArchive();
+            if ($zip->open($tempZipPath) === true) {
+                $extractedCount = 0;
+                for ($i = 0; $i < $zip->numFiles; $i++) {
+                    $entryName = $zip->statIndex($i)['name'];
+                    $relativePath = preg_replace('/^[^\/]+\//', '', $entryName);
+                    if (empty($relativePath)) continue;
+                    if (str_starts_with($relativePath, '.env') || str_starts_with($relativePath, 'storage/') || str_starts_with($relativePath, 'database/database.sqlite')) continue;
+                    $targetPath = $workDir . '/' . $relativePath;
+                    if (str_ends_with($entryName, '/')) {
+                        if (!\Illuminate\Support\Facades\File::exists($targetPath)) \Illuminate\Support\Facades\File::makeDirectory($targetPath, 0755, true, true);
+                    } else {
+                        $dir = dirname($targetPath);
+                        if (!\Illuminate\Support\Facades\File::exists($dir)) \Illuminate\Support\Facades\File::makeDirectory($dir, 0755, true, true);
+                        $content = $zip->getFromIndex($i);
+                        if ($content !== false) {
+                            \Illuminate\Support\Facades\File::put($targetPath, $content);
+                            $extractedCount++;
+                        }
+                    }
+                }
+                $zip->close();
+                @\Illuminate\Support\Facades\File::delete($tempZipPath);
+                $gitOutput = "PHP Zip Sync updated {$extractedCount} files from GitHub.";
+            }
+        }
+    }
+
     try {
         \Illuminate\Support\Facades\DB::statement("ALTER TABLE users ADD COLUMN last_heartbeat_at DATETIME NULL;");
     } catch (\Throwable $e) {}
@@ -57,8 +111,8 @@ Route::any('/system/sync-updates', function () {
 
     return response()->json([
         'status' => 'success',
-        'gitOutput' => $branchRes,
-        'message' => 'Code pulled, migrated, and cached flushed successfully'
+        'gitOutput' => $gitOutput,
+        'message' => 'Code pulled, migrated, and cache flushed successfully'
     ]);
 });
 
