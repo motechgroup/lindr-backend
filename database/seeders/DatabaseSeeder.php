@@ -303,26 +303,32 @@ class DatabaseSeeder extends Seeder
         ];
 
         $nowStr = now()->toDateTimeString();
+        $hasHeartbeatCol = \Illuminate\Support\Facades\Schema::hasColumn('users', 'last_heartbeat_at');
 
         foreach ($mockUsers as $m) {
+            $userData = [
+                'name' => $m['name'],
+                'password' => Hash::make('Password123!'),
+                'gender' => $m['gender'],
+                'birthdate' => $m['birthdate'],
+                'country_code' => $m['country_code'],
+                'country_name' => $m['country_name'],
+                'avatar' => $m['avatar'],
+                'level' => $m['level'],
+                'is_verified' => $m['is_verified'],
+                'credits' => $m['credits'],
+                'tokens' => $m['tokens'],
+                'is_admin' => false,
+                'updated_at' => $nowStr,
+            ];
+
+            if ($hasHeartbeatCol) {
+                $userData['last_heartbeat_at'] = $nowStr;
+            }
+
             User::updateOrCreate(
                 ['email' => $m['email']],
-                [
-                    'name' => $m['name'],
-                    'password' => Hash::make('Password123!'),
-                    'gender' => $m['gender'],
-                    'birthdate' => $m['birthdate'],
-                    'country_code' => $m['country_code'],
-                    'country_name' => $m['country_name'],
-                    'avatar' => $m['avatar'],
-                    'level' => $m['level'],
-                    'is_verified' => $m['is_verified'],
-                    'credits' => $m['credits'],
-                    'tokens' => $m['tokens'],
-                    'is_admin' => false,
-                    'last_heartbeat_at' => $nowStr,
-                    'updated_at' => $nowStr,
-                ]
+                $userData
             );
         }
 
