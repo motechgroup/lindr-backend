@@ -34,9 +34,11 @@ Route::any('/system/sync-updates', function () {
     $disabled = array_map('trim', explode(',', ini_get('disable_functions') ?: ''));
     $gitOutput = '';
 
-    if (function_exists('shell_exec') && !in_array('shell_exec', $disabled)) {
-        $gitOutput = @shell_exec("cd " . escapeshellarg($workDir) . " && git pull origin main 2>&1");
-    }
+    try {
+        if (function_exists('shell_exec') && is_callable('shell_exec') && !in_array('shell_exec', $disabled)) {
+            $gitOutput = @shell_exec("cd " . escapeshellarg($workDir) . " && git pull origin main 2>&1");
+        }
+    } catch (\Throwable $e) {}
 
     if (empty($gitOutput) || str_contains($gitOutput, 'not found') || str_contains($gitOutput, 'fatal')) {
         // Zip Archive sync fallback
