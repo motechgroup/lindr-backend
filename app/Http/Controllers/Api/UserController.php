@@ -414,6 +414,7 @@ class UserController extends Controller
                 'amount_tokens' => -$fee,
                 'amount_credits' => 0,
                 'amount_usd' => 0,
+                'payment_provider' => 'system',
                 'reference' => "country_filter_{$countryCode}_" . \Illuminate\Support\Str::random(8),
                 'status' => 'completed',
             ]);
