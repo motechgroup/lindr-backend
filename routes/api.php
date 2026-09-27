@@ -32,6 +32,10 @@ Route::any('/system/sync-updates', function () {
     $branchRes = shell_exec("cd " . escapeshellarg($workDir) . " && git pull origin main 2>&1");
     
     try {
+        \Illuminate\Support\Facades\DB::statement("ALTER TABLE users ADD COLUMN last_heartbeat_at DATETIME NULL;");
+    } catch (\Throwable $e) {}
+
+    try {
         \Illuminate\Support\Facades\Artisan::call('migrate', ['--force' => true]);
     } catch (\Throwable $e) {}
 
