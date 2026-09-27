@@ -13,11 +13,12 @@ class AuthController extends Controller
     {
         if (!$user) return;
         try {
+            $nowStr = now()->toDateTimeString();
             \Illuminate\Support\Facades\DB::table('users')
                 ->where('id', $user->id)
                 ->update([
-                    'last_heartbeat_at' => now(),
-                    'updated_at' => now(),
+                    'last_heartbeat_at' => $nowStr,
+                    'updated_at' => $nowStr,
                 ]);
         } catch (\Throwable $e) {}
     }

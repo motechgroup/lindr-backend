@@ -12,11 +12,12 @@ class UserController extends Controller
     {
         if (!$user) return;
         try {
+            $nowStr = now()->toDateTimeString();
             \Illuminate\Support\Facades\DB::table('users')
                 ->where('id', $user->id)
                 ->update([
-                    'last_heartbeat_at' => now(),
-                    'updated_at' => now(),
+                    'last_heartbeat_at' => $nowStr,
+                    'updated_at' => $nowStr,
                 ]);
         } catch (\Throwable $e) {}
     }
@@ -205,7 +206,7 @@ class UserController extends Controller
 
     public function heartbeat(Request $request)
     {
-        $userId = $request->header('X-User-Id') ?? $request->input('userId');
+        $userId = $request->header('X-User-Id') ?? $request->query('userId') ?? $request->input('userId');
         if (!empty($userId)) {
             $user = User::find($userId);
             if ($user) {
