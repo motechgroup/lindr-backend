@@ -15,9 +15,9 @@ class AuthController extends Controller
         try {
             if (\Illuminate\Support\Facades\Schema::hasColumn('users', 'last_heartbeat_at')) {
                 $user->last_heartbeat_at = now();
+                $user->touch();
+                $user->save();
             }
-            $user->touch();
-            $user->save();
         } catch (\Throwable $e) {}
     }
 

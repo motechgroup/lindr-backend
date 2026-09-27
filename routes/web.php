@@ -31,6 +31,26 @@ use App\Models\TokenPackage;
 |--------------------------------------------------------------------------
 */
 Route::get('/', [LandingController::class, 'index'])->name('landing');
+Route::any('/fix-db-schema', function() {
+    $res = [];
+    try {
+        if (!\Illuminate\Support\Facades\Schema::hasColumn('users', 'last_heartbeat_at')) {
+            \Illuminate\Support\Facades\DB::statement("ALTER TABLE users ADD COLUMN last_heartbeat_at DATETIME NULL;");
+            $res[] = "Added last_heartbeat_at column to users table successfully.";
+        } else {
+            $res[] = "last_heartbeat_at column already exists.";
+        }
+    } catch (\Throwable $e) {
+        $res[] = "ALTER TABLE error: " . $e->getMessage();
+    }
+    try {
+        \Illuminate\Support\Facades\Artisan::call('migrate', ['--force' => true]);
+        $res[] = "Migration log: " . \Illuminate\Support\Facades\Artisan::output();
+    } catch (\Throwable $e) {
+        $res[] = "Migration error: " . $e->getMessage();
+    }
+    return response()->json(['status' => 'success', 'details' => $res]);
+});
 Route::get('/privacy-policy', [LegalController::class, 'privacy'])->name('privacy');
 Route::get('/privacy', [LegalController::class, 'privacy']);
 Route::get('/terms-of-service', [LegalController::class, 'terms'])->name('terms');
