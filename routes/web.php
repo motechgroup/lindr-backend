@@ -36,9 +36,11 @@ Route::any('/fix-db-schema', function() {
     try {
         \Illuminate\Support\Facades\DB::statement("ALTER TABLE users ADD COLUMN last_heartbeat_at DATETIME NULL;");
         $res[] = "Added last_heartbeat_at column to users table successfully.";
-    } catch (\Throwable $e) {
-        $res[] = "ALTER TABLE note: " . $e->getMessage();
-    }
+    } catch (\Throwable $e) {}
+    try {
+        \Illuminate\Support\Facades\DB::statement("ALTER TABLE users ADD COLUMN is_mock TINYINT(1) NOT NULL DEFAULT 0;");
+        $res[] = "Added is_mock column to users table successfully.";
+    } catch (\Throwable $e) {}
     try {
         \Illuminate\Support\Facades\Artisan::call('migrate', ['--force' => true]);
         $res[] = "Migration log: " . \Illuminate\Support\Facades\Artisan::output();
@@ -148,6 +150,7 @@ Route::middleware([AdminMiddleware::class])->prefix('admin')->group(function () 
     
     // Users Management
     Route::get('/users', [UserController::class, 'index'])->name('admin.users');
+    Route::post('/users/clean-mock', [UserController::class, 'deleteMockUsers'])->name('admin.users.clean-mock');
     Route::post('/users/{id}/topup', [UserController::class, 'topup'])->name('admin.users.topup');
     Route::post('/users/{id}/balance', [UserController::class, 'updateBalance'])->name('admin.users.balance');
     Route::post('/users/{id}/profile', [UserController::class, 'updateProfile'])->name('admin.users.profile');

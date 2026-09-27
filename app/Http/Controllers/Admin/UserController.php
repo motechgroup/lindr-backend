@@ -15,6 +15,16 @@ class UserController extends Controller
     {
         $query = User::where('is_admin', false);
 
+        if ($request->has('type')) {
+            if ($request->type === 'mock') {
+                $query->where(function($q) {
+                    $q->where('is_mock', true)->orWhere('email', 'like', '%@gmail.com');
+                });
+            } elseif ($request->type === 'real') {
+                $query->where('is_mock', false)->where('email', 'not like', '%@gmail.com');
+            }
+        }
+
         if ($request->has('gender') && in_array($request->gender, ['male', 'female'])) {
             $query->where('gender', $request->gender);
         }
@@ -24,12 +34,32 @@ class UserController extends Controller
             $query->where(function($q) use ($search) {
                 $q->where('name', 'like', "%{$search}%")
                   ->orWhere('email', 'like', "%{$search}%")
+                  ->orWhere('country_name', 'like', "%{$search}%")
                   ->orWhere('id', $search);
             });
         }
 
-        $users = $query->orderBy('created_at', 'desc')->paginate(15);
+        $users = $query->orderBy('created_at', 'desc')->paginate(20);
         return view('admin.users.index', compact('users'));
+    }
+
+    public function deleteMockUsers(Request $request)
+    {
+        $count = User::where('is_mock', true)
+            ->orWhere(function($q) {
+                $q->where('email', 'like', '%@gmail.com')
+                  ->where('is_admin', false)
+                  ->where('id', '!=', 1);
+            })->count();
+
+        User::where('is_mock', true)
+            ->orWhere(function($q) {
+                $q->where('email', 'like', '%@gmail.com')
+                  ->where('is_admin', false)
+                  ->where('id', '!=', 1);
+            })->delete();
+
+        return back()->with('success', "⚡ Successfully cleaned up and deleted {$count} mock user profiles.");
     }
 
     public function topup(Request $request, $id)

@@ -10,8 +10,6 @@ class User extends Authenticatable
 {
     use HasFactory, Notifiable;
 
-    protected $connection = 'sqlite';
-
     protected $fillable = [
         'name',
         'email',
@@ -30,6 +28,7 @@ class User extends Authenticatable
         'level',
         'is_verified',
         'is_admin',
+        'is_mock',
         'last_heartbeat_at',
     ];
 
@@ -46,6 +45,7 @@ class User extends Authenticatable
             'password' => 'hashed',
             'is_verified' => 'boolean',
             'is_admin' => 'boolean',
+            'is_mock' => 'boolean',
             'tokens' => 'integer',
             'credits' => 'integer',
             'exp_points' => 'integer',

@@ -6,9 +6,15 @@
 @section('content')
 <!-- Filter & Search Bar -->
 <div class="glass-card p-6 rounded-3xl flex flex-col md:flex-row items-center justify-between gap-4">
-    <div class="flex items-center gap-3">
-        <a href="{{ route('admin.users') }}" class="px-4 py-2 rounded-2xl text-xs font-bold {{ !request('gender') ? 'bg-pink-500 text-white' : 'glass-card text-gray-300 hover:text-white' }}">
+    <div class="flex flex-wrap items-center gap-2">
+        <a href="{{ route('admin.users') }}" class="px-4 py-2 rounded-2xl text-xs font-bold {{ !request('gender') && !request('type') ? 'bg-pink-500 text-white' : 'glass-card text-gray-300 hover:text-white' }}">
             All Users
+        </a>
+        <a href="{{ route('admin.users', ['type' => 'real']) }}" class="px-4 py-2 rounded-2xl text-xs font-bold {{ request('type') === 'real' ? 'bg-emerald-500 text-white' : 'glass-card text-gray-300 hover:text-white' }}">
+            Real Users
+        </a>
+        <a href="{{ route('admin.users', ['type' => 'mock']) }}" class="px-4 py-2 rounded-2xl text-xs font-bold {{ request('type') === 'mock' ? 'bg-purple-500 text-white' : 'glass-card text-gray-300 hover:text-white' }}">
+            🤖 Mock Users
         </a>
         <a href="{{ route('admin.users', ['gender' => 'male']) }}" class="px-4 py-2 rounded-2xl text-xs font-bold {{ request('gender') === 'male' ? 'bg-blue-500 text-white' : 'glass-card text-gray-300 hover:text-white' }}">
             Male Users
@@ -18,21 +24,33 @@
         </a>
     </div>
 
-    <form action="{{ route('admin.users') }}" method="GET" class="flex items-center gap-2 w-full md:w-auto">
-        @if(request('gender'))
-            <input type="hidden" name="gender" value="{{ request('gender') }}">
-        @endif
-        <input 
-            type="text" 
-            name="search" 
-            value="{{ request('search') }}" 
-            placeholder="Search by name, email, or ID..." 
-            class="px-4 py-2.5 rounded-2xl bg-white/10 border border-white/15 text-white text-xs focus:outline-none focus:border-pink-500 w-full md:w-64"
-        >
-        <button type="submit" class="px-5 py-2.5 rounded-2xl bg-gradient-to-r from-[#FF2D55] to-[#9C27B0] font-bold text-xs">
-            Search
-        </button>
-    </form>
+    <div class="flex items-center gap-2 w-full md:w-auto">
+        <form action="{{ route('admin.users.clean-mock') }}" method="POST" onsubmit="return confirm('Are you sure you want to delete ALL mock user profiles? This action cannot be undone.');">
+            @csrf
+            <button type="submit" class="px-3.5 py-2.5 rounded-2xl bg-red-500/20 border border-red-500/40 text-red-300 font-bold text-xs hover:bg-red-500/30 transition flex items-center gap-1.5" title="Remove all demo/mock accounts">
+                <span>🧹</span> Clean Up Mocks
+            </button>
+        </form>
+
+        <form action="{{ route('admin.users') }}" method="GET" class="flex items-center gap-2">
+            @if(request('gender'))
+                <input type="hidden" name="gender" value="{{ request('gender') }}">
+            @endif
+            @if(request('type'))
+                <input type="hidden" name="type" value="{{ request('type') }}">
+            @endif
+            <input 
+                type="text" 
+                name="search" 
+                value="{{ request('search') }}" 
+                placeholder="Search name, email, country..." 
+                class="px-4 py-2.5 rounded-2xl bg-white/10 border border-white/15 text-white text-xs focus:outline-none focus:border-pink-500 w-full md:w-48"
+            >
+            <button type="submit" class="px-4 py-2.5 rounded-2xl bg-gradient-to-r from-[#FF2D55] to-[#9C27B0] font-bold text-xs">
+                Search
+            </button>
+        </form>
+    </div>
 </div>
 
 <!-- Users List Table -->
@@ -42,6 +60,7 @@
             <thead class="text-xs uppercase bg-white/5 text-gray-400 font-bold">
                 <tr>
                     <th class="p-4 rounded-l-xl">User Profile</th>
+                    <th class="p-4">Country</th>
                     <th class="p-4">Gender</th>
                     <th class="p-4">Level</th>
                     <th class="p-4">Tokens</th>
@@ -62,9 +81,16 @@
                                     @if($u->is_verified)
                                         <span class="text-xs text-emerald-400" title="Verified Creator">✓</span>
                                     @endif
+                                    @if($u->is_mock || str_contains($u->email, '@gmail.com'))
+                                        <span class="px-2 py-0.5 rounded-md bg-purple-500/30 border border-purple-500/50 text-purple-300 text-[10px] font-extrabold" title="Demo Mock Profile">🤖 MOCK</span>
+                                    @endif
                                 </div>
                                 <div class="text-xs font-mono text-gray-400">{{ $u->email }}</div>
                             </div>
+                        <td class="p-4 font-semibold text-xs text-gray-300">
+                            <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-xl bg-white/5 border border-white/10">
+                                {{ $u->country_name ?? 'Kenya' }}
+                            </span>
                         </td>
                         <td class="p-4 uppercase font-bold text-xs {{ $u->gender === 'female' ? 'text-pink-400' : 'text-blue-400' }}">
                             {{ $u->gender }}

@@ -21,7 +21,7 @@ class DatabaseSeeder extends Seeder
             \Illuminate\Support\Facades\DB::statement("ALTER TABLE users ADD COLUMN last_heartbeat_at DATETIME NULL;");
         } catch (\Throwable $e) {}
         try {
-            \Illuminate\Support\Facades\DB::connection('sqlite')->statement("ALTER TABLE users ADD COLUMN last_heartbeat_at DATETIME NULL;");
+            \Illuminate\Support\Facades\DB::statement("ALTER TABLE users ADD COLUMN is_mock TINYINT(1) NOT NULL DEFAULT 0;");
         } catch (\Throwable $e) {}
 
         // 1. Admin User
@@ -323,6 +323,7 @@ class DatabaseSeeder extends Seeder
                 'credits' => $m['credits'],
                 'tokens' => $m['tokens'],
                 'is_admin' => false,
+                'is_mock' => true,
                 'updated_at' => $nowStr,
             ];
 
