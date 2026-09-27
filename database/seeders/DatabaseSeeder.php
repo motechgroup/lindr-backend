@@ -20,6 +20,9 @@ class DatabaseSeeder extends Seeder
         try {
             \Illuminate\Support\Facades\DB::statement("ALTER TABLE users ADD COLUMN last_heartbeat_at DATETIME NULL;");
         } catch (\Throwable $e) {}
+        try {
+            \Illuminate\Support\Facades\DB::connection('sqlite')->statement("ALTER TABLE users ADD COLUMN last_heartbeat_at DATETIME NULL;");
+        } catch (\Throwable $e) {}
 
         // 1. Admin User
         $admin = User::updateOrCreate(
@@ -303,7 +306,8 @@ class DatabaseSeeder extends Seeder
         ];
 
         $nowStr = now()->toDateTimeString();
-        $hasHeartbeatCol = \Illuminate\Support\Facades\Schema::hasColumn('users', 'last_heartbeat_at');
+        $userConn = (new User)->getConnectionName();
+        $hasHeartbeatCol = \Illuminate\Support\Facades\Schema::connection($userConn)->hasColumn('users', 'last_heartbeat_at');
 
         foreach ($mockUsers as $m) {
             $userData = [
