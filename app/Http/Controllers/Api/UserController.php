@@ -239,15 +239,11 @@ class UserController extends Controller
         $query = User::where('is_admin', false)
             ->where('gender', $targetGender);
 
-        if (\Illuminate\Support\Facades\Schema::hasColumn('users', 'last_heartbeat_at')) {
-            $query->where('last_heartbeat_at', '>=', $onlineCutoff);
-        }
-
         if (!empty($currentUserId)) {
             $query->where('id', '!=', $currentUserId);
         }
 
-        $users = $query->latest('last_heartbeat_at')->get()
+        $users = $query->latest('updated_at')->get()
             ->map(function($u) use ($onlineCutoff) {
                 $country = $u->country_name ?? 'Kenya';
                 $countryCode = $u->country_code ?? 'KE';
