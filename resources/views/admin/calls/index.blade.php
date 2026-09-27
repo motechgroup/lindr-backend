@@ -1,7 +1,7 @@
 @extends('layouts.admin')
 
 @section('title', 'Video Call Logs')
-@section('subtitle', 'Monitor active and past Agora RTC video call sessions')
+@section('subtitle', 'Monitor active and past LiveKit RTC video call sessions')
 
 @section('content')
 <!-- Call Summary Stats -->
@@ -28,7 +28,7 @@
                 <tr>
                     <th class="p-4 rounded-l-xl">Caller (Male)</th>
                     <th class="p-4">Receiver (Female)</th>
-                    <th class="p-4">Agora Channel</th>
+                    <th class="p-4">LiveKit Room</th>
                     <th class="p-4">Duration</th>
                     <th class="p-4">Tokens Spent</th>
                     <th class="p-4">Credits Paid</th>

@@ -106,21 +106,22 @@
         </div>
     </div>
 
-    <!-- 4. Video Call Engine & Agora Config -->
+    <!-- 4. Video Call Engine & LiveKit Config -->
     <div class="glass-card p-8 rounded-3xl">
         <div class="flex items-center gap-3 mb-6 pb-4 border-b border-white/10">
             <div class="w-10 h-10 rounded-xl bg-orange-500/20 text-orange-400 font-bold flex items-center justify-center text-xl">
                 📹
             </div>
             <div>
-                <h2 class="text-lg font-bold text-white">Video Call Engine Config (Agora)</h2>
-                <p class="text-xs text-gray-400">Agora RTC credentials and maximum call duration parameters</p>
+                <h2 class="text-lg font-bold text-white">Video Call Engine Config (LiveKit)</h2>
+                <p class="text-xs text-gray-400">LiveKit WebRTC credentials and maximum call duration parameters</p>
             </div>
         </div>
 
         <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-            @if(isset($settingsGrouped['agora']))
-                @foreach($settingsGrouped['agora'] as $s)
+            @php $callEngineSettings = $settingsGrouped['livekit'] ?? $settingsGrouped['agora'] ?? []; @endphp
+            @if(count($callEngineSettings) > 0)
+                @foreach($callEngineSettings as $s)
                     <div>
                         <label class="block text-xs font-bold text-gray-300 uppercase tracking-wider mb-2">
                             {{ $s->description }}

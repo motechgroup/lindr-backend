@@ -154,17 +154,60 @@ class InteractionController extends Controller
         $caller = User::find($validated['callerId']);
         $receiver = User::find($validated['receiverId']);
 
+        if (!$caller) {
+            return response()->json(['status' => 'error', 'message' => 'Caller not found'], 404);
+        }
+
         // 10-second ticker cost and payout calculations
         $costPer10Sec = max(1, (int) ceil($validated['callRatePerMin'] / 6));
         $payoutPer10Sec = max(1, (int) ceil($validated['creditPayRatePerMin'] / 6));
 
-        if ($caller) {
+        $callerGender = strtolower($caller->gender ?? '');
+        $receiverGender = $receiver ? strtolower($receiver->gender ?? '') : '';
+
+        // Rule: Men need tokens to make or receive calls.
+        // Rule: Females are NOT deducted tokens for calls/chats (only gifts).
+        // Rule: Females earn credits from video calls. Males earn credits ONLY from gifts.
+
+        if ($callerGender === 'female') {
+            // Female caller pays 0 tokens for calls
+            // Female caller earns credits from video calls
+            $caller->credits += $payoutPer10Sec;
+            $caller->total_credits_earned += $payoutPer10Sec;
+            $caller->exp_points += ($payoutPer10Sec * 2);
+            $caller->save();
+
+            // If receiver is male, male receiver MUST pay tokens to receive calls
+            if ($receiver && $receiverGender === 'male') {
+                if ($receiver->tokens < $costPer10Sec) {
+                    return response()->json([
+                        'status' => 'insufficient_tokens',
+                        'message' => 'Receiver (male) ran out of tokens to maintain call',
+                        'shouldEndCall' => true,
+                        'callerTokens' => (int) $caller->tokens,
+                        'receiverTokens' => (int) $receiver->tokens,
+                    ]);
+                }
+
+                $receiver->tokens = max(0, $receiver->tokens - $costPer10Sec);
+                $receiver->save();
+            }
+
+            return response()->json([
+                'status' => 'success',
+                'callerTokens' => (int) $caller->tokens,
+                'callerCredits' => (int) $caller->credits,
+                'receiverTokens' => $receiver ? (int) $receiver->tokens : 0,
+                'receiverCredits' => $receiver ? (int) $receiver->credits : 0,
+            ]);
+        } else {
+            // Male (or unspecified) caller MUST have tokens to make calls
             if ($caller->tokens < $costPer10Sec) {
                 return response()->json([
                     'status' => 'insufficient_tokens',
                     'message' => 'Caller ran out of tokens',
                     'shouldEndCall' => true,
-                    'callerTokens' => $caller->tokens,
+                    'callerTokens' => (int) $caller->tokens,
                 ]);
             }
 
@@ -172,8 +215,8 @@ class InteractionController extends Controller
             $caller->tokens = max(0, $caller->tokens - $costPer10Sec);
             $caller->save();
 
-            // Payout credits to female receiver
-            if ($receiver) {
+            // If receiver is female, payout credits to female receiver
+            if ($receiver && $receiverGender === 'female') {
                 $receiver->credits += $payoutPer10Sec;
                 $receiver->total_credits_earned += $payoutPer10Sec;
                 $receiver->exp_points += ($payoutPer10Sec * 2);
@@ -182,12 +225,12 @@ class InteractionController extends Controller
 
             return response()->json([
                 'status' => 'success',
-                'callerTokens' => $caller->tokens,
-                'receiverCredits' => $receiver ? $receiver->credits : 0,
+                'callerTokens' => (int) $caller->tokens,
+                'callerCredits' => (int) $caller->credits,
+                'receiverTokens' => $receiver ? (int) $receiver->tokens : 0,
+                'receiverCredits' => $receiver ? (int) $receiver->credits : 0,
             ]);
         }
-
-        return response()->json(['status' => 'error', 'message' => 'Caller not found'], 404);
     }
 
     public function logCall(Request $request)

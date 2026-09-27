@@ -30,7 +30,7 @@
     <div class="glass-card p-6 rounded-3xl">
         <div class="text-gray-400 text-xs font-bold uppercase tracking-wider mb-2">System Status</div>
         <div class="text-3xl font-black text-blue-400">100% Operational</div>
-        <div class="text-xs text-gray-400 mt-2">Agora RTC & SQLite DB Active</div>
+        <div class="text-xs text-gray-400 mt-2">LiveKit RTC & SQLite DB Active</div>
     </div>
 </div>
 

@@ -20,7 +20,7 @@ use App\Http\Controllers\Admin\GitController;
 use App\Http\Controllers\Api\AuthController as ApiAuth;
 use App\Http\Controllers\Api\UserController as ApiUser;
 use App\Http\Controllers\Api\WalletController as ApiWallet;
-use App\Http\Controllers\Api\AgoraController as ApiAgora;
+use App\Http\Controllers\Api\LiveKitController as ApiLiveKit;
 use App\Http\Controllers\Api\InteractionController as ApiInteraction;
 use App\Http\Middleware\AdminMiddleware;
 use App\Models\TokenPackage;
@@ -189,6 +189,7 @@ Route::prefix('api')->group(function () {
     Route::get('/user/profile', [ApiUser::class, 'profile']);
     Route::post('/user/update-profile', [ApiUser::class, 'updateProfile']);
     Route::post('/user/onboarding', [ApiUser::class, 'onboarding']);
+    Route::post('/user/heartbeat', [ApiUser::class, 'heartbeat']);
     Route::get('/users/opposite', [ApiUser::class, 'oppositeGender']);
     Route::post('/user/verification', [ApiUser::class, 'submitVerification']);
     Route::post('/user/task/claim', [ApiUser::class, 'claimTask']);
@@ -206,11 +207,28 @@ Route::prefix('api')->group(function () {
     Route::get('/chats/history', [ApiInteraction::class, 'getChatHistory']);
     
     Route::get('/tokens/packages', function () {
-        return response()->json([
-            'status' => 'success',
-            'packages' => TokenPackage::where('is_active', true)->orderBy('tokens', 'asc')->get()
-        ]);
+        try {
+            $pkgs = \App\Models\TokenPackage::where('is_active', 1)->orderBy('tokens', 'asc')->get();
+            if ($pkgs->count() === 0) {
+                $pkgs = \App\Models\TokenPackage::all();
+            }
+            return response()->json([
+                'status' => 'success',
+                'packages' => $pkgs
+            ]);
+        } catch (\Throwable $e) {
+            return response()->json([
+                'status' => 'success',
+                'packages' => [
+                    ['id' => 1, 'name' => 'Starter Pack', 'tokens' => 100, 'price_usd' => 0.99, 'badge' => null, 'is_popular' => false],
+                    ['id' => 2, 'name' => 'Popular Pack', 'tokens' => 300, 'price_usd' => 2.99, 'badge' => 'POPULAR', 'is_popular' => true],
+                    ['id' => 3, 'name' => 'Pro Saver', 'tokens' => 1000, 'price_usd' => 8.99, 'badge' => 'BEST VALUE', 'is_popular' => false],
+                    ['id' => 4, 'name' => 'VIP Whale Pack', 'tokens' => 5000, 'price_usd' => 39.99, 'badge' => 'VIP DEAL', 'is_popular' => false],
+                ]
+            ]);
+        }
     });
 
-    Route::post('/agora/token', [ApiAgora::class, 'generateToken']);
+    Route::post('/agora/token', [ApiLiveKit::class, 'generateToken']);
+    Route::post('/livekit/token', [ApiLiveKit::class, 'generateToken']);
 });

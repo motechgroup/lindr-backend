@@ -20,13 +20,12 @@ class UserController extends Controller
         if (!$user && !empty($email)) {
             $user = User::where('email', $email)->first();
         }
-        if (!$user) {
-            $user = User::first();
-        }
 
         if (!$user) {
             return response()->json(['status' => 'error', 'message' => 'User not found'], 404);
         }
+
+        $user->touch();
 
         return response()->json([
             'status' => 'success',
@@ -115,7 +114,7 @@ class UserController extends Controller
             'userId' => 'nullable|string',
             'gender' => 'required|in:male,female',
             'birthdate' => 'required|string',
-            'name' => 'required|string',
+            'name' => 'nullable|string',
             'avatar' => 'nullable|string',
             'countryCode' => 'nullable|string',
             'countryName' => 'nullable|string',
@@ -147,7 +146,9 @@ class UserController extends Controller
         } else {
             $user->gender = $validated['gender'];
             $user->birthdate = $validated['birthdate'];
-            $user->name = $validated['name'];
+            if (!empty($validated['name'])) {
+                $user->name = $validated['name'];
+            }
             if (!empty($validated['avatar'])) {
                 $isCurrentCustom = !empty($user->avatar) && !str_contains($user->avatar, 'unsplash.com');
                 $isNewUnsplash = str_contains($validated['avatar'], 'unsplash.com');
@@ -187,26 +188,51 @@ class UserController extends Controller
         ]);
     }
 
+    public function heartbeat(Request $request)
+    {
+        $userId = $request->header('X-User-Id') ?? $request->input('userId');
+        if (!empty($userId)) {
+            $user = User::find($userId);
+            if ($user) {
+                $user->touch();
+                return response()->json(['status' => 'success', 'timestamp' => now()->timestamp]);
+            }
+        }
+        return response()->json(['status' => 'error', 'message' => 'User not found'], 404);
+    }
+
     public function oppositeGender(Request $request)
     {
         $gender = strtolower($request->query('gender', 'male'));
         $currentUserId = $request->header('X-User-Id') ?? $request->query('userId');
 
+        if (!empty($currentUserId)) {
+            $currentUser = User::find($currentUserId);
+            if ($currentUser) {
+                $currentUser->touch();
+            }
+        }
+
         // Target gender is strictly female if male, and male if female
         $targetGender = $gender === 'female' ? 'male' : 'female';
 
+        // Strict online threshold: User MUST have sent a heartbeat or updated in the last 90 seconds (1.5 min)
+        $onlineCutoff = now()->subSeconds(90);
+
         $query = User::where('is_admin', false)
-            ->where('gender', $targetGender);
+            ->where('gender', $targetGender)
+            ->where('updated_at', '>=', $onlineCutoff);
 
         if (!empty($currentUserId)) {
             $query->where('id', '!=', $currentUserId);
         }
 
         $users = $query->latest()->get()
-            ->map(function($u) {
+            ->map(function($u) use ($onlineCutoff) {
                 $country = $u->country_name ?? 'Kenya';
                 $countryCode = $u->country_code ?? 'KE';
                 $flag = ($countryCode === 'KE' || strtolower($country) === 'kenya') ? '🇰🇪' : '🌐';
+                $isOnline = $u->updated_at && $u->updated_at->gte($onlineCutoff);
 
                 return [
                     'id' => (string) $u->id,
@@ -217,8 +243,8 @@ class UserController extends Controller
                     'country' => $country,
                     'countryCode' => $countryCode,
                     'flag' => $flag,
-                    'isOnline' => true,
-                    'status' => 'online',
+                    'isOnline' => $isOnline,
+                    'status' => $isOnline ? 'online' : 'offline',
                     'isVerified' => (bool) $u->is_verified,
                     'level' => $u->level ?? 1,
                     'bio' => 'Ready to connect and video call on Lindr ✨',
@@ -227,7 +253,11 @@ class UserController extends Controller
                     'friendsCount' => 0,
                     'photos' => [],
                 ];
-            });
+            })
+            ->filter(function($u) {
+                return $u['isOnline'] === true;
+            })
+            ->values();
 
         return response()->json([
             'status' => 'success',

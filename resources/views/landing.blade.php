@@ -116,7 +116,7 @@
                         📹
                     </div>
                     <h3 class="text-xl font-bold mb-3">Instant HD Video Matches</h3>
-                    <p class="text-gray-400 text-sm leading-relaxed">High-definition low-latency video streaming powered by Agora RTC. Match instantly with online profiles opposite your gender.</p>
+                    <p class="text-gray-400 text-sm leading-relaxed">High-definition low-latency video streaming powered by LiveKit RTC. Match instantly with online profiles opposite your gender.</p>
                 </div>
 
                 <div class="glass-card p-8 rounded-3xl relative overflow-hidden">

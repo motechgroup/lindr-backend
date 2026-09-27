@@ -85,7 +85,7 @@
                     <li><strong class="text-white">Account Registration Data:</strong> Name, email address, gender, birthdate (to verify 18+ age requirement), profile avatar photos, bio, and country location.</li>
                     <li><strong class="text-white">Biometric Verification Data:</strong> For creator verification and payout security, female creators submit 4-step pose selfies (smile, open mouth, close eyes, look left). Biometric features are processed solely for identity verification and anti-fraud purposes.</li>
                     <li><strong class="text-white">Technical & Device Telemetry:</strong> IP address, device model, operating system, unique device identifiers, country code (detected via IP to provide localized payment options such as Safaricom M-Pesa in Kenya), and app usage diagnostics.</li>
-                    <li><strong class="text-white">Real-Time Video Call & Chat Logs:</strong> Agora RTC channel IDs, call durations, token deductions, credit earnings, and text/gift interaction logs. Video call content is transmitted via encrypted peer-to-peer RTC channels.</li>
+                    <li><strong class="text-white">Real-Time Video Call & Chat Logs:</strong> LiveKit RTC room IDs, call durations, token deductions, credit earnings, and text/gift interaction logs. Video call content is transmitted via encrypted peer-to-peer RTC channels.</li>
                     <li><strong class="text-white">Financial & Payment Information:</strong> Payment transactions processed via third-party gateways (Flutterwave, Safaricom M-Pesa, ePay, PayPal). We do not store raw credit card numbers on our servers.</li>
                 </ul>
             </section>
@@ -100,7 +100,7 @@
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4 pt-2">
                     <div class="p-4 rounded-2xl bg-white/5 border border-white/5 space-y-1">
                         <div class="font-bold text-white">📹 Video Calling & Matching</div>
-                        <div class="text-xs text-gray-400">To establish Agora RTC video channels between users and female creators, calculate call rates, and track token usage.</div>
+                        <div class="text-xs text-gray-400">To establish LiveKit RTC video channels between users and female creators, calculate call rates, and track token usage.</div>
                     </div>
                     <div class="p-4 rounded-2xl bg-white/5 border border-white/5 space-y-1">
                         <div class="font-bold text-white">💸 Financial Top-ups & Cashouts</div>
@@ -125,7 +125,7 @@
                 </h2>
                 <p>We do not sell, rent, or trade your personal information. We share relevant data only with trusted infrastructure providers:</p>
                 <ul class="list-disc list-inside space-y-1.5 pl-2 text-gray-300">
-                    <li><strong class="text-white">Agora.io RTC:</strong> Provides video streaming infrastructure.</li>
+                    <li><strong class="text-white">LiveKit Cloud / Server:</strong> Provides video streaming infrastructure.</li>
                     <li><strong class="text-white">Flutterwave, Safaricom M-Pesa, ePay, PayPal:</strong> Process payment top-ups and cashouts securely.</li>
                     <li><strong class="text-white">Google OAuth Services:</strong> Facilitates single sign-on authentication.</li>
                     <li><strong class="text-white">Legal Authorities:</strong> When required by court order, law enforcement, or applicable data protection acts (e.g., Kenya Data Protection Act 2019, GDPR).</li>

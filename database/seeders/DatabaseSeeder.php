@@ -89,9 +89,10 @@ class DatabaseSeeder extends Seeder
             ['key' => 'minimum_cashout_credits', 'value' => '500', 'category' => 'payouts', 'description' => 'Minimum Credits Balance Required for Cashout'],
             ['key' => 'credits_per_usd', 'value' => '100', 'category' => 'payouts', 'description' => 'Credit-to-USD Exchange Rate (100 Credits = $1.00 USD)'],
 
-            // Video Call Engine & Agora Config
-            ['key' => 'agora_app_id', 'value' => '7f7547aa4508451bb0dcd38612ba5c35', 'category' => 'agora', 'description' => 'Agora RTC App ID'],
-            ['key' => 'max_call_duration_minutes', 'value' => '60', 'category' => 'agora', 'description' => 'Maximum Continuous Video Call Duration (Mins)'],
+            // Video Call Engine & LiveKit Config
+            ['key' => 'livekit_url', 'value' => env('LIVEKIT_URL', 'wss://demo.livekit.cloud'), 'category' => 'livekit', 'description' => 'LiveKit WebRTC Server URL'],
+            ['key' => 'livekit_api_key', 'value' => env('LIVEKIT_API_KEY', 'devkey'), 'category' => 'livekit', 'description' => 'LiveKit API Key'],
+            ['key' => 'max_call_duration_minutes', 'value' => '60', 'category' => 'livekit', 'description' => 'Maximum Continuous Video Call Duration (Mins)'],
 
             // App Rules & Bonus Settings
             ['key' => 'new_user_welcome_tokens', 'value' => '0', 'category' => 'app_rules', 'description' => 'Welcome Gift Tokens for New Male Users'],
