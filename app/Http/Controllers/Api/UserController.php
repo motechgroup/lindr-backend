@@ -279,6 +279,12 @@ class UserController extends Controller
 
         return response()->json([
             'status' => 'success',
+            'debug' => [
+                'targetGender' => $targetGender,
+                'genderParam' => $gender,
+                'currentUserGender' => $currentUser->gender ?? null,
+                'allUsers' => User::select('id', 'name', 'gender', 'last_heartbeat_at', 'updated_at', 'is_admin')->get(),
+            ],
             'users' => $users
         ]);
     }
