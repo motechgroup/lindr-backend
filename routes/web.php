@@ -189,7 +189,7 @@ Route::prefix('api')->group(function () {
     Route::get('/user/profile', [ApiUser::class, 'profile']);
     Route::post('/user/update-profile', [ApiUser::class, 'updateProfile']);
     Route::post('/user/onboarding', [ApiUser::class, 'onboarding']);
-    Route::post('/user/heartbeat', [ApiUser::class, 'heartbeat']);
+    Route::match(['get', 'post'], '/user/heartbeat', [ApiUser::class, 'heartbeat']);
     Route::get('/users/opposite', [ApiUser::class, 'oppositeGender']);
     Route::post('/user/verification', [ApiUser::class, 'submitVerification']);
     Route::post('/user/task/claim', [ApiUser::class, 'claimTask']);
