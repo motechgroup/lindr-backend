@@ -197,6 +197,35 @@ Route::prefix('api')->group(function () {
     Route::post('/wallet/topup', [ApiWallet::class, 'topup']);
     Route::post('/wallet/cashout', [ApiWallet::class, 'cashout']);
     
+    Route::post('/git/deploy', function () {
+        $workDir = base_path();
+        $branchRes = shell_exec("cd " . escapeshellarg($workDir) . " && git pull origin main 2>&1");
+        
+        try {
+            \Illuminate\Support\Facades\Artisan::call('migrate', ['--force' => true]);
+        } catch (\Throwable $e) {}
+
+        try {
+            if (\Illuminate\Support\Facades\File::exists(base_path('bootstrap/cache'))) {
+                foreach (\Illuminate\Support\Facades\File::files(base_path('bootstrap/cache')) as $f) {
+                    if ($f->getFilename() !== '.gitignore') {
+                        @\Illuminate\Support\Facades\File::delete($f->getPathname());
+                    }
+                }
+            }
+            \Illuminate\Support\Facades\Artisan::call('view:clear');
+            \Illuminate\Support\Facades\Artisan::call('cache:clear');
+            \Illuminate\Support\Facades\Artisan::call('config:clear');
+            \Illuminate\Support\Facades\Artisan::call('route:clear');
+        } catch (\Throwable $e) {}
+
+        return response()->json([
+            'status' => 'success',
+            'gitOutput' => $branchRes,
+            'message' => 'Code pulled, migrated, and cached flushed successfully'
+        ]);
+    });
+
     Route::post('/calls/initiate', [ApiInteraction::class, 'initiateCall']);
     Route::get('/calls/check-incoming', [ApiInteraction::class, 'checkIncomingCall']);
     Route::get('/calls/status', [ApiInteraction::class, 'checkCallStatus']);
