@@ -411,9 +411,10 @@ class UserController extends Controller
             \App\Models\Transaction::create([
                 'user_id' => $user->id,
                 'type' => 'country_filter',
-                'tokens' => -$fee,
+                'amount_tokens' => -$fee,
+                'amount_credits' => 0,
                 'amount_usd' => 0,
-                'description' => "Country filter unlocked: {$countryCode} (-{$fee} Tokens)",
+                'reference' => "country_filter_{$countryCode}_" . \Illuminate\Support\Str::random(8),
                 'status' => 'completed',
             ]);
         }
