@@ -172,6 +172,7 @@ class UserController extends Controller
                 $user->country_code = $validated['countryCode'];
                 $user->country_name = $validated['countryName'] ?? ($validated['countryCode'] === 'KE' ? 'Kenya' : 'International');
             }
+            $user->save();
         }
 
         $this->touchHeartbeat($user);
