@@ -194,7 +194,9 @@ class UserController extends Controller
         if (!empty($userId)) {
             $user = User::find($userId);
             if ($user) {
+                $user->last_heartbeat_at = now();
                 $user->touch();
+                $user->save();
                 return response()->json(['status' => 'success', 'timestamp' => now()->timestamp]);
             }
         }
@@ -209,30 +211,32 @@ class UserController extends Controller
         if (!empty($currentUserId)) {
             $currentUser = User::find($currentUserId);
             if ($currentUser) {
+                $currentUser->last_heartbeat_at = now();
                 $currentUser->touch();
+                $currentUser->save();
             }
         }
 
         // Target gender is strictly female if male, and male if female
         $targetGender = $gender === 'female' ? 'male' : 'female';
 
-        // Strict online threshold: User MUST have sent a heartbeat or updated in the last 90 seconds (1.5 min)
-        $onlineCutoff = now()->subSeconds(90);
+        // Strict online threshold: User MUST have sent an active app heartbeat in the last 45 seconds
+        $onlineCutoff = now()->subSeconds(45);
 
         $query = User::where('is_admin', false)
             ->where('gender', $targetGender)
-            ->where('updated_at', '>=', $onlineCutoff);
+            ->where('last_heartbeat_at', '>=', $onlineCutoff);
 
         if (!empty($currentUserId)) {
             $query->where('id', '!=', $currentUserId);
         }
 
-        $users = $query->latest()->get()
+        $users = $query->latest('last_heartbeat_at')->get()
             ->map(function($u) use ($onlineCutoff) {
                 $country = $u->country_name ?? 'Kenya';
                 $countryCode = $u->country_code ?? 'KE';
                 $flag = ($countryCode === 'KE' || strtolower($country) === 'kenya') ? '🇰🇪' : '🌐';
-                $isOnline = $u->updated_at && $u->updated_at->gte($onlineCutoff);
+                $isOnline = $u->last_heartbeat_at && $u->last_heartbeat_at->gte($onlineCutoff);
 
                 return [
                     'id' => (string) $u->id,
