@@ -29,6 +29,8 @@ class DatabaseSeeder extends Seeder
                 'credits' => 999999,
                 'is_verified' => true,
             ]
+        );
+
         // 2. 20 Diverse Mock Users (Male & Female) from Various Countries
         $mockUsers = [
             // Females
