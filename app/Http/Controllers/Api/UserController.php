@@ -241,6 +241,14 @@ class UserController extends Controller
         $query = User::where('is_admin', false)
             ->whereRaw('LOWER(gender) = ?', [strtolower($targetGender)]);
 
+        $countryCodeFilter = $request->query('countryCode') ?? $request->query('country');
+        if (!empty($countryCodeFilter) && strtoupper($countryCodeFilter) !== 'ALL' && strtoupper($countryCodeFilter) !== 'GLOBAL') {
+            $query->where(function($q) use ($countryCodeFilter) {
+                $q->whereRaw('LOWER(country_code) = ?', [strtolower($countryCodeFilter)])
+                  ->orWhereRaw('LOWER(country_name) = ?', [strtolower($countryCodeFilter)]);
+            });
+        }
+
         if (!empty($currentUserId)) {
             $query->where('id', '!=', $currentUserId);
         }
@@ -249,7 +257,7 @@ class UserController extends Controller
             ->map(function($u) use ($onlineCutoff) {
                 $country = $u->country_name ?? 'Kenya';
                 $countryCode = $u->country_code ?? 'KE';
-                $flag = ($countryCode === 'KE' || strtolower($country) === 'kenya') ? '🇰🇪' : '🌐';
+                $flag = $this->getCountryFlag($countryCode, $country);
                 $hbTime = $u->last_heartbeat_at ?? $u->updated_at;
                 $lastHb = $hbTime ? \Carbon\Carbon::parse($hbTime) : null;
                 $isOnline = $lastHb ? $lastHb->gte($onlineCutoff) : false;
@@ -282,6 +290,140 @@ class UserController extends Controller
         return response()->json([
             'status' => 'success',
             'users' => $users
+        ]);
+    }
+
+    private function getCountryFlag($code, $name = '')
+    {
+        $c = strtoupper(trim($code ?? ''));
+        if ($c === 'KE' || strtolower($name) === 'kenya') return '🇰🇪';
+        if ($c === 'US' || strtolower($name) === 'united states' || strtolower($name) === 'usa') return '🇺🇸';
+        if ($c === 'GB' || strtolower($name) === 'united kingdom' || strtolower($name) === 'uk') return '🇬🇧';
+        if ($c === 'NG' || strtolower($name) === 'nigeria') return '🇳🇬';
+        if ($c === 'ZA' || strtolower($name) === 'south africa') return '🇿🇦';
+        if ($c === 'TZ' || strtolower($name) === 'tanzania') return '🇹🇿';
+        if ($c === 'UG' || strtolower($name) === 'uganda') return '🇺🇬';
+        if ($c === 'IN' || strtolower($name) === 'india') return '🇮🇳';
+        if ($c === 'CA' || strtolower($name) === 'canada') return '🇨🇦';
+        if ($c === 'AU' || strtolower($name) === 'australia') return '🇦🇺';
+        if ($c === 'BR' || strtolower($name) === 'brazil') return '🇧🇷';
+        if ($c === 'ES' || strtolower($name) === 'spain') return '🇪🇸';
+        if ($c === 'KR' || strtolower($name) === 'south korea') return '🇰🇷';
+        if ($c === 'DE' || strtolower($name) === 'germany') return '🇩🇪';
+        if ($c === 'FR' || strtolower($name) === 'france') return '🇫🇷';
+
+        if (strlen($c) === 2 && ctype_alpha($c)) {
+            $char1 = mb_chr(ord($c[0]) + 127397, 'UTF-8');
+            $char2 = mb_chr(ord($c[1]) + 127397, 'UTF-8');
+            return $char1 . $char2;
+        }
+        return '🌐';
+    }
+
+    public function availableCountries(Request $request)
+    {
+        $feeSetting = \App\Models\SystemSetting::where('key', 'country_filter_token_fee')->first();
+        $tokenFee = $feeSetting ? (int)$feeSetting->value : 5;
+
+        $rawCountries = User::where('is_admin', false)
+            ->whereNotNull('country_code')
+            ->select('country_code', 'country_name', \Illuminate\Support\Facades\DB::raw('COUNT(*) as user_count'))
+            ->groupBy('country_code', 'country_name')
+            ->orderBy('user_count', 'desc')
+            ->get();
+
+        $countriesList = [
+            [
+                'code' => 'ALL',
+                'name' => 'Global (All Countries)',
+                'flag' => '🌐',
+                'userCount' => User::where('is_admin', false)->count(),
+                'tokenFee' => 0,
+            ]
+        ];
+
+        foreach ($rawCountries as $c) {
+            $code = strtoupper(trim($c->country_code ?? 'KE'));
+            $name = $c->country_name ?? ($code === 'KE' ? 'Kenya' : $code);
+            $flag = $this->getCountryFlag($code, $name);
+
+            $countriesList[] = [
+                'code' => $code,
+                'name' => $name,
+                'flag' => $flag,
+                'userCount' => (int)$c->user_count,
+                'tokenFee' => $tokenFee,
+            ];
+        }
+
+        return response()->json([
+            'status' => 'success',
+            'countryFilterTokenFee' => $tokenFee,
+            'countries' => $countriesList
+        ]);
+    }
+
+    public function filterCountry(Request $request)
+    {
+        $validated = $request->validate([
+            'userId' => 'nullable|string',
+            'countryCode' => 'required|string',
+        ]);
+
+        $userId = $validated['userId'] ?? $request->header('X-User-Id');
+        if (empty($userId)) {
+            return response()->json(['status' => 'error', 'message' => 'User ID is required'], 400);
+        }
+
+        $user = User::find($userId);
+        if (!$user) {
+            return response()->json(['status' => 'error', 'message' => 'User not found'], 404);
+        }
+
+        $countryCode = strtoupper(trim($validated['countryCode']));
+
+        if ($countryCode === 'ALL' || $countryCode === 'GLOBAL') {
+            return response()->json([
+                'status' => 'success',
+                'message' => 'Global country filter active (Free)',
+                'countryCode' => 'ALL',
+                'tokensDeducted' => 0,
+                'remainingTokens' => (int) $user->tokens,
+            ]);
+        }
+
+        $feeSetting = \App\Models\SystemSetting::where('key', 'country_filter_token_fee')->first();
+        $fee = $feeSetting ? (int)$feeSetting->value : 5;
+
+        if ($fee > 0) {
+            if ($user->tokens < $fee) {
+                return response()->json([
+                    'status' => 'error',
+                    'message' => "Insufficient tokens. Filtering users by country requires {$fee} tokens.",
+                    'requiredTokens' => $fee,
+                    'currentTokens' => (int) $user->tokens,
+                ], 400);
+            }
+
+            $user->tokens -= $fee;
+            $user->save();
+
+            \App\Models\Transaction::create([
+                'user_id' => $user->id,
+                'type' => 'country_filter',
+                'tokens' => -$fee,
+                'amount_usd' => 0,
+                'description' => "Country filter unlocked: {$countryCode} (-{$fee} Tokens)",
+                'status' => 'completed',
+            ]);
+        }
+
+        return response()->json([
+            'status' => 'success',
+            'message' => "Country filter unlocked for {$countryCode}",
+            'countryCode' => $countryCode,
+            'tokensDeducted' => $fee,
+            'remainingTokens' => (int) $user->tokens,
         ]);
     }
 

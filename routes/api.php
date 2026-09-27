@@ -21,6 +21,8 @@ Route::post('/user/update-profile', [ApiUser::class, 'updateProfile']);
 Route::post('/user/onboarding', [ApiUser::class, 'onboarding']);
 Route::match(['get', 'post'], '/user/heartbeat', [ApiUser::class, 'heartbeat']);
 Route::get('/users/opposite', [ApiUser::class, 'oppositeGender']);
+Route::get('/countries', [ApiUser::class, 'availableCountries']);
+Route::post('/users/filter-country', [ApiUser::class, 'filterCountry']);
 Route::post('/user/verification', [ApiUser::class, 'submitVerification']);
 Route::post('/user/task/claim', [ApiUser::class, 'claimTask']);
 

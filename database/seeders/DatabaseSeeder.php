@@ -98,6 +98,7 @@ class DatabaseSeeder extends Seeder
             ['key' => 'new_user_welcome_tokens', 'value' => '0', 'category' => 'app_rules', 'description' => 'Welcome Gift Tokens for New Male Users'],
             ['key' => 'biometric_verification_required', 'value' => '1', 'category' => 'app_rules', 'description' => 'Require 4-Step Verification Before Video Calling (1=Yes, 0=No)'],
             ['key' => 'daily_login_bonus_exp', 'value' => '50', 'category' => 'app_rules', 'description' => 'Daily Login Bonus EXP Points'],
+            ['key' => 'country_filter_token_fee', 'value' => '5', 'category' => 'app_rules', 'description' => 'Token Fee to Filter Users by Country'],
         ];
 
         foreach ($settings as $s) {
