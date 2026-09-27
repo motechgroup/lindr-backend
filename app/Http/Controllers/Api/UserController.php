@@ -251,7 +251,8 @@ class UserController extends Controller
                 $country = $u->country_name ?? 'Kenya';
                 $countryCode = $u->country_code ?? 'KE';
                 $flag = ($countryCode === 'KE' || strtolower($country) === 'kenya') ? '🇰🇪' : '🌐';
-                $isOnline = $u->last_heartbeat_at && $u->last_heartbeat_at->gte($onlineCutoff);
+                $lastHb = $u->last_heartbeat_at ? \Carbon\Carbon::parse($u->last_heartbeat_at) : null;
+                $isOnline = $lastHb && $lastHb->gte($onlineCutoff);
 
                 return [
                     'id' => (string) $u->id,
