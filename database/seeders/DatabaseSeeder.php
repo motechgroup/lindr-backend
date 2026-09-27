@@ -338,10 +338,10 @@ class DatabaseSeeder extends Seeder
 
         // 9. Seed Token Packages
         $packages = [
-            ['name' => 'Starter Pack', 'tokens' => 100, 'price_usd' => 0.99, 'badge' => null, 'is_popular' => false, 'is_active' => true],
-            ['name' => 'Popular Pack', 'tokens' => 300, 'price_usd' => 2.99, 'badge' => 'POPULAR', 'is_popular' => true, 'is_active' => true],
-            ['name' => 'Pro Saver', 'tokens' => 1000, 'price_usd' => 8.99, 'badge' => 'BEST VALUE', 'is_popular' => false, 'is_active' => true],
-            ['name' => 'VIP Whale Pack', 'tokens' => 5000, 'price_usd' => 39.99, 'badge' => 'VIP DEAL', 'is_popular' => false, 'is_active' => true],
+            ['name' => 'Starter Pack', 'tokens' => 100, 'price_usd' => 0.99, 'price_kes' => 130, 'badge' => null, 'is_popular' => false, 'is_active' => true],
+            ['name' => 'Popular Pack', 'tokens' => 300, 'price_usd' => 2.99, 'price_kes' => 390, 'badge' => 'POPULAR', 'is_popular' => true, 'is_active' => true],
+            ['name' => 'Pro Saver', 'tokens' => 1000, 'price_usd' => 8.99, 'price_kes' => 1170, 'badge' => 'BEST VALUE', 'is_popular' => false, 'is_active' => true],
+            ['name' => 'VIP Whale Pack', 'tokens' => 5000, 'price_usd' => 39.99, 'price_kes' => 5200, 'badge' => 'VIP DEAL', 'is_popular' => false, 'is_active' => true],
         ];
 
         foreach ($packages as $pkg) {
