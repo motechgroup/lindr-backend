@@ -12,11 +12,12 @@ class UserController extends Controller
     {
         if (!$user) return;
         try {
-            if (\Illuminate\Support\Facades\Schema::hasColumn('users', 'last_heartbeat_at')) {
-                $user->last_heartbeat_at = now();
-                $user->touch();
-                $user->save();
-            }
+            \Illuminate\Support\Facades\DB::table('users')
+                ->where('id', $user->id)
+                ->update([
+                    'last_heartbeat_at' => now(),
+                    'updated_at' => now(),
+                ]);
         } catch (\Throwable $e) {}
     }
 

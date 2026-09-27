@@ -30,6 +30,7 @@ class User extends Authenticatable
         'level',
         'is_verified',
         'is_admin',
+        'last_heartbeat_at',
     ];
 
     protected $hidden = [
